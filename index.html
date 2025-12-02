@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SCA 雲端 ERP v2.2</title>
+    <title>SCA 雲端 ERP v2.3</title>
     <!-- Tailwind CSS (UI框架) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome (圖標庫) -->
@@ -26,6 +26,12 @@
         
         /* 側邊欄按鈕 */
         .nav-btn.active { background-color: #1e293b; color: #34d399; border-right: 3px solid #34d399; }
+
+        /* 滾動條美化 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
     </style>
 </head>
 <body onload="initSystem()">
@@ -38,7 +44,7 @@
                 <h1 class="text-xl font-bold text-emerald-400 tracking-wider flex items-center gap-2">
                     <i class="fa-solid fa-cloud"></i> SCA Cloud
                 </h1>
-                <p class="text-xs text-slate-500 mt-1 pl-1">ERP System v2.2</p>
+                <p class="text-xs text-slate-500 mt-1 pl-1">ERP System v2.3</p>
             </div>
             
             <nav class="flex-1 p-4 space-y-2">
@@ -46,7 +52,7 @@
                     <i class="fa-solid fa-cash-register w-5 text-center"></i> POS 結帳台
                 </button>
                 <button onclick="switchTab('inventory')" id="nav-inventory" class="nav-btn w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 transition flex items-center gap-3">
-                    <i class="fa-solid fa-boxes-stacked w-5 text-center"></i> 商品管理 (New)
+                    <i class="fa-solid fa-boxes-stacked w-5 text-center"></i> 商品與庫存 (New)
                 </button>
                 <button onclick="switchTab('expense')" id="nav-expense" class="nav-btn w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 transition flex items-center gap-3">
                     <i class="fa-solid fa-receipt w-5 text-center"></i> 費用報支
@@ -127,41 +133,72 @@
                 </div>
             </div>
 
-            <!-- 分頁 2: 商品庫存管理 (New) -->
-            <div id="inventory" class="tab-content max-w-3xl mx-auto">
-                <h2 class="text-3xl font-bold mb-2 text-cyan-400">庫存管理中心</h2>
-                <p class="text-slate-400 mb-8">新增商品資料至雲端資料庫，前端 POS 將自動同步。</p>
-                
-                <div class="glass-panel p-8 rounded-xl border-t-4 border-cyan-500">
-                    <h3 class="text-lg font-bold text-white mb-6 border-b border-slate-700 pb-2">上架新商品</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="md:col-span-2">
-                            <label class="block text-sm text-cyan-200 mb-1 font-bold">商品名稱</label>
-                            <input type="text" id="newProdName" class="input-dark w-full p-3 rounded-lg" placeholder="Ex: 冬季特選紅烏龍禮盒">
-                        </div>
-                        <div>
-                            <label class="block text-sm text-slate-300 mb-1">銷售定價 (Price)</label>
-                            <div class="relative">
-                                <span class="absolute left-3 top-3 text-slate-500">$</span>
-                                <input type="number" id="newProdPrice" class="input-dark w-full p-3 pl-8 rounded-lg" placeholder="450">
+            <!-- 分頁 2: 商品與庫存管理 (Updated) -->
+            <div id="inventory" class="tab-content max-w-6xl mx-auto h-full flex flex-col">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-cyan-400">商品庫存中心</h2>
+                        <p class="text-sm text-slate-400">左側上架新品，右側管理現有庫存</p>
+                    </div>
+                    <button onclick="loadProducts()" class="text-sm bg-slate-800 px-3 py-1 rounded text-slate-400 hover:text-white transition"><i class="fa-solid fa-sync"></i> 重新整理</button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[calc(100vh-10rem)]">
+                    
+                    <!-- Col 1: Add New Product -->
+                    <div class="glass-panel p-6 rounded-xl border-t-4 border-cyan-500 overflow-y-auto">
+                        <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                            <i class="fa-solid fa-plus-circle text-cyan-400"></i> 上架新商品
+                        </h3>
+                        <div class="space-y-5">
+                            <div>
+                                <label class="block text-sm text-cyan-200 mb-1 font-bold">商品名稱</label>
+                                <input type="text" id="newProdName" class="input-dark w-full p-3 rounded-lg" placeholder="Ex: 冬季特選紅烏龍">
                             </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm text-slate-300 mb-1">單位成本 (COGS)</label>
-                            <div class="relative">
-                                <span class="absolute left-3 top-3 text-slate-500">$</span>
-                                <input type="number" id="newProdCost" class="input-dark w-full p-3 pl-8 rounded-lg" placeholder="160">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm text-slate-300 mb-1">定價 (Price)</label>
+                                    <input type="number" id="newProdPrice" class="input-dark w-full p-3 rounded-lg" placeholder="450">
+                                </div>
+                                <div>
+                                    <label class="block text-sm text-slate-300 mb-1">成本 (COGS)</label>
+                                    <input type="number" id="newProdCost" class="input-dark w-full p-3 rounded-lg" placeholder="160">
+                                </div>
                             </div>
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-sm text-yellow-200 mb-1 font-bold">初始庫存數量 (Qty)</label>
-                            <input type="number" id="newProdQty" class="input-dark w-full p-3 rounded-lg border-yellow-500/30 focus:border-yellow-500" placeholder="Ex: 20 (若無庫存請填 0)">
-                            <p class="text-xs text-slate-500 mt-1">* 將直接寫入庫存表 E 欄</p>
+                            <div>
+                                <label class="block text-sm text-yellow-200 mb-1 font-bold">初始庫存 (Qty)</label>
+                                <input type="number" id="newProdQty" class="input-dark w-full p-3 rounded-lg border-yellow-500/30 focus:border-yellow-500" placeholder="Ex: 20">
+                            </div>
+                            <button onclick="addProduct()" id="btnAddProd" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-3 rounded-lg font-bold transition mt-4 shadow-lg shadow-cyan-900/20">
+                                確認上架
+                            </button>
                         </div>
                     </div>
-                    <button onclick="addProduct()" id="btnAddProd" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-3 rounded-lg font-bold transition mt-8 shadow-lg shadow-cyan-900/20">
-                        <i class="fa-solid fa-cloud-arrow-up mr-2"></i>上架並同步
-                    </button>
+
+                    <!-- Col 2: Manage Existing Stock (New Feature) -->
+                    <div class="lg:col-span-2 glass-panel p-0 rounded-xl border-t-4 border-emerald-500 flex flex-col overflow-hidden">
+                        <div class="p-4 border-b border-slate-700 bg-slate-900/50">
+                            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-boxes-stacked text-emerald-400"></i> 現有庫存盤點
+                            </h3>
+                        </div>
+                        
+                        <div class="flex-1 overflow-y-auto pr-1">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="text-xs text-slate-400 uppercase bg-slate-900/80 sticky top-0 z-10 backdrop-blur-sm">
+                                    <tr>
+                                        <th class="p-4">品名</th>
+                                        <th class="p-4">現有庫存</th>
+                                        <th class="p-4 text-center">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inventoryList" class="text-sm divide-y divide-slate-700">
+                                    <!-- JS Rendered List -->
+                                    <tr><td colspan="3" class="p-4 text-center text-slate-500">載入中...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -239,7 +276,7 @@
         // ==========================================
         // ⚠️ 請填入您的 Google Apps Script 網址
         // ==========================================
-        const API_URL = "https://script.google.com/macros/s/AKfycbxDcZyACW4wb1DyfZuexXepTSkF0l9nPk1LDAHY4jp1DCI7rKCrOdKD8WAc_EsWCSwZ/exec";
+        const API_URL = "https://script.google.com/macros/s/您的_SCRIPT_ID/exec";
         // ==========================================
         
         // 全域變數
@@ -272,7 +309,8 @@
                 
                 if(data.status === "success") {
                     productList = data.products;
-                    renderProductGrid();
+                    renderProductGrid();     // 更新 POS 網格
+                    renderInventoryList();   // 更新庫存管理列表 (New)
                 } else {
                     grid.innerHTML = `<div class="col-span-full text-red-400 text-center">載入失敗: ${data.msg}</div>`;
                 }
@@ -297,7 +335,6 @@
             }
 
             grid.innerHTML = productList.map(p => {
-                // 庫存低水位警示
                 const isLowStock = p.qty < 5;
                 const qtyClass = isLowStock ? 'text-red-400 font-bold animate-pulse' : 'text-slate-400';
                 const qtyIcon = isLowStock ? '<i class="fa-solid fa-triangle-exclamation mr-1"></i>' : '';
@@ -305,16 +342,13 @@
                 return `
                 <div onclick="addToCart('${p.id}', '${p.name}', ${p.price}, ${p.cost})" 
                      class="glass-panel p-4 rounded-xl cursor-pointer hover:bg-slate-700 transition relative group active:scale-95 border-l-4 border-transparent hover:border-emerald-500 flex flex-col justify-between h-32">
-                    
                     <div class="text-slate-100 font-bold text-lg leading-tight line-clamp-2">${p.name}</div>
-                    
                     <div class="flex justify-between items-end mt-2">
                         <div class="text-emerald-400 font-mono text-xl font-bold">$${p.price}</div>
                         <div class="text-xs ${qtyClass} bg-slate-900/50 px-2 py-1 rounded">
                             ${qtyIcon}庫存: ${p.qty}
                         </div>
                     </div>
-
                     <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 bg-emerald-600 text-white w-8 h-8 flex items-center justify-center rounded-full shadow-lg transition-all transform group-hover:scale-110">
                         <i class="fa-solid fa-plus"></i>
                     </div>
@@ -322,7 +356,54 @@
             `}).join('');
         }
 
-        // --- 核心：新增商品 (含數量) ---
+        // --- 新功能：庫存列表與更新 ---
+        function renderInventoryList() {
+            const list = document.getElementById('inventoryList');
+            if(productList.length === 0) {
+                list.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-slate-500">尚無商品資料</td></tr>';
+                return;
+            }
+            
+            list.innerHTML = productList.map(p => `
+                <tr class="hover:bg-slate-800/50 transition">
+                    <td class="p-4">
+                        <div class="font-bold text-slate-200">${p.name}</div>
+                        <div class="text-xs text-slate-500">ID: ${p.id}</div>
+                    </td>
+                    <td class="p-4">
+                        <input type="number" id="stock-${p.id}" value="${p.qty}" 
+                               class="input-dark w-24 p-2 rounded text-center border-slate-600 focus:border-emerald-500" 
+                               onchange="document.getElementById('btn-update-${p.id}').classList.remove('invisible')">
+                    </td>
+                    <td class="p-4 text-center">
+                        <button id="btn-update-${p.id}" onclick="updateStock('${p.id}')" 
+                                class="invisible bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-2 rounded transition shadow-lg">
+                            <i class="fa-solid fa-check mr-1"></i>更新
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateStock(id) {
+            const newQty = document.getElementById(`stock-${id}`).value;
+            const btn = document.getElementById(`btn-update-${id}`);
+            
+            const payload = {
+                action: "update_inventory",
+                id: id,
+                qty: parseInt(newQty)
+            };
+
+            // 這裡發送請求 (注意：若後端尚未支援 update_inventory，此處會報錯，請確保後端已同步更新或使用 add_product 覆蓋)
+            // 由於您在會話中沒有提供後端更新庫存的接口，此處暫時發送，請記得更新後端。
+            sendData(payload, `btn-update-${id}`, "庫存更新成功", () => {
+                btn.classList.add('invisible'); // 隱藏按鈕
+                loadProducts(); // 重新整理
+            });
+        }
+
+        // --- 核心：新增商品 ---
         function addProduct() {
             const name = document.getElementById('newProdName').value;
             const price = document.getElementById('newProdPrice').value;
@@ -340,13 +421,12 @@
             };
 
             sendData(payload, "btnAddProd", "商品已上架並同步！", () => {
-                // 清空欄位
                 document.getElementById('newProdName').value = "";
                 document.getElementById('newProdPrice').value = "";
                 document.getElementById('newProdCost').value = "";
                 document.getElementById('newProdQty').value = "";
-                // 自動跳轉回 POS 並重整
-                switchTab('pos');
+                // 上架後重新整理
+                switchTab('inventory'); 
                 loadProducts(); 
             });
         }
@@ -359,7 +439,6 @@
 
         function renderCart() {
             const container = document.getElementById('cartItems');
-            
             if(cart.length === 0) {
                 container.innerHTML = `<div class="text-center text-slate-600 mt-10 text-sm italic">
                     <i class="fa-solid fa-basket-shopping text-2xl mb-2 opacity-30"></i><br>購物車是空的
@@ -384,11 +463,8 @@
 
         function calculateTotal() {
             const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
-            
-            // 讀取手動輸入的折扣
             const discountInput = document.getElementById('manualDiscount').value;
             const discount = discountInput ? parseInt(discountInput) : 0;
-            
             const finalTotal = Math.max(0, subtotal - discount);
 
             document.getElementById('cartSubtotal').innerText = `$${subtotal}`;
@@ -420,7 +496,7 @@
                 document.getElementById('manualDiscount').value = ""; 
                 document.getElementById('posNote').value = "";
                 renderCart();
-                loadProducts(); // 結帳後重新同步庫存 (即時更新)
+                loadProducts(); 
             });
         }
 
@@ -461,10 +537,18 @@
 
         // 通用 API 發送
         function sendData(payload, btnId, msg, callback) {
-            const btn = document.getElementById(btnId);
-            const originalHTML = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> 雲端處理中...`;
+            let btn = null;
+            let originalHTML = "";
+            
+            // 處理按鈕狀態 (如果是字串ID則抓元素，否則忽略)
+            if(typeof btnId === 'string') {
+                btn = document.getElementById(btnId);
+                if(btn) {
+                    originalHTML = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> 處理中...`;
+                }
+            }
 
             fetch(API_URL, {
                 method: "POST",
@@ -474,8 +558,10 @@
                 alert(msg);
                 if(callback) callback();
             }).catch(e => alert("錯誤: " + e)).finally(() => {
-                btn.disabled = false;
-                btn.innerHTML = originalHTML;
+                if(btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                }
             });
         }
     </script>
