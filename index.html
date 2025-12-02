@@ -3,100 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SCA 會計中樞系統</title>
+    <title>SCA 雲端 ERP v2.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #1e293b; color: #f8fafc; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        .tab-content { display: none; animation: fadeIn 0.3s; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .glass-panel { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
+        .input-dark { background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; color: white; }
+        .input-dark:focus { border-color: #10b981; outline: none; }
     </style>
 </head>
-<body>
+<body onload="initSystem()">
 
     <div class="flex h-screen overflow-hidden">
-        <!-- 側邊導航 -->
-        <aside class="w-64 bg-slate-900 border-r border-slate-700 flex flex-col">
-            <div class="p-6 text-center border-b border-slate-700">
-                <h1 class="text-2xl font-bold text-emerald-400"><i class="fa-solid fa-leaf"></i> 鑫利發財會</h1>
-                <p class="text-xs text-slate-400 mt-1">SCA Enterprise System</p>
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0">
+            <div class="p-6 border-b border-slate-800">
+                <h1 class="text-xl font-bold text-emerald-400 tracking-wider">SCA 雲端中樞</h1>
+                <p class="text-xs text-slate-500 mt-1">Dynamic ERP v2.0</p>
             </div>
             <nav class="flex-1 p-4 space-y-2">
-                <button onclick="switchTab('pos')" class="w-full text-left p-3 rounded hover:bg-slate-800 text-slate-300 hover:text-white transition flex items-center gap-3">
-                    <i class="fa-solid fa-cash-register w-5"></i> 銷貨與庫存
+                <button onclick="switchTab('pos')" class="nav-btn w-full text-left p-3 rounded hover:bg-slate-800 text-slate-300 transition flex items-center gap-3">
+                    <i class="fa-solid fa-cash-register w-5"></i> POS 結帳台
                 </button>
-                <button onclick="switchTab('expense')" class="w-full text-left p-3 rounded hover:bg-slate-800 text-slate-300 hover:text-white transition flex items-center gap-3">
-                    <i class="fa-solid fa-utensils w-5"></i> 智慧餐費
+                <button onclick="switchTab('inventory')" class="nav-btn w-full text-left p-3 rounded hover:bg-slate-800 text-slate-300 transition flex items-center gap-3">
+                    <i class="fa-solid fa-boxes-stacked w-5"></i> 商品管理 (New)
                 </button>
-                <button onclick="switchTab('purchase')" class="w-full text-left p-3 rounded hover:bg-slate-800 text-slate-300 hover:text-white transition flex items-center gap-3">
+                <button onclick="switchTab('expense')" class="nav-btn w-full text-left p-3 rounded hover:bg-slate-800 text-slate-300 transition flex items-center gap-3">
+                    <i class="fa-solid fa-receipt w-5"></i> 費用報支
+                </button>
+                <button onclick="switchTab('purchase')" class="nav-btn w-full text-left p-3 rounded hover:bg-slate-800 text-slate-300 transition flex items-center gap-3">
                     <i class="fa-solid fa-file-invoice-dollar w-5"></i> 採購付款
                 </button>
             </nav>
-            <div class="p-4 border-t border-slate-700">
-                <div class="text-xs text-slate-500">System Status: <span class="text-emerald-500">Online</span></div>
-            </div>
         </aside>
 
-        <!-- 主內容區 -->
-        <main class="flex-1 overflow-y-auto p-8 relative">
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 relative">
             
-            <!-- 模組一：POS 銷貨 (Sales Module) -->
-            <div id="pos" class="tab-content active max-w-4xl mx-auto">
-                <h2 class="text-3xl font-bold mb-6 text-emerald-400">POS 零售結帳台</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- 商品區 -->
-                    <div class="md:col-span-2 grid grid-cols-2 gap-4">
-                        <!-- 商品卡片 -->
-                        <div onclick="addToCart(1, '特選紅烏龍', 450, 160)" class="glass-panel p-4 rounded-xl cursor-pointer hover:bg-slate-700 transition relative group">
-                            <div class="text-emerald-400 font-bold">特選紅烏龍</div>
-                            <div class="text-2xl font-mono mt-2">$450</div>
-                            <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-emerald-500 text-white text-xs px-2 py-1 rounded">Add +</div>
-                        </div>
-                        <div onclick="addToCart(2, '凍頂烏龍', 350, 160)" class="glass-panel p-4 rounded-xl cursor-pointer hover:bg-slate-700 transition relative group">
-                            <div class="text-yellow-400 font-bold">凍頂烏龍</div>
-                            <div class="text-2xl font-mono mt-2">$350</div>
-                        </div>
-                        <div onclick="addToCart(3, '蜜香紅茶', 300, 160)" class="glass-panel p-4 rounded-xl cursor-pointer hover:bg-slate-700 transition relative group">
-                            <div class="text-red-400 font-bold">蜜香紅茶</div>
-                            <div class="text-2xl font-mono mt-2">$300</div>
-                        </div>
-                        <div onclick="addToCart(4, '坪林包種', 250, 160)" class="glass-panel p-4 rounded-xl cursor-pointer hover:bg-slate-700 transition relative group">
-                            <div class="text-green-400 font-bold">坪林包種</div>
-                            <div class="text-2xl font-mono mt-2">$250</div>
+            <!-- Tab 1: Dynamic POS -->
+            <div id="pos" class="tab-content active max-w-6xl mx-auto h-full flex flex-col">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-emerald-400">POS 零售結帳</h2>
+                    <button onclick="loadProducts()" class="text-sm bg-slate-800 px-3 py-1 rounded text-slate-400 hover:text-white transition"><i class="fa-solid fa-sync"></i> 同步商品</button>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+                    <!-- 商品區 (動態生成) -->
+                    <div class="lg:col-span-2 overflow-y-auto pr-2">
+                        <div id="productGrid" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <!-- JS 將在此處插入按鈕 -->
+                            <div class="col-span-full text-center py-10 text-slate-500">
+                                <i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><br>正在從雲端載入商品...
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- 結帳區 -->
-                    <div class="glass-panel p-6 rounded-xl flex flex-col h-full">
-                        <h3 class="font-bold border-b border-slate-600 pb-2 mb-4">🛒 購物車</h3>
-                        <div id="cartItems" class="flex-1 space-y-2 text-sm overflow-y-auto mb-4"></div>
+                    <!-- 購物車 -->
+                    <div class="glass-panel p-6 rounded-xl flex flex-col h-[calc(100vh-8rem)]">
+                        <h3 class="font-bold border-b border-slate-700 pb-3 mb-4 flex justify-between">
+                            <span>🛒 購物車</span>
+                            <span class="text-xs bg-emerald-900 text-emerald-400 px-2 py-1 rounded" id="itemCount">0 項</span>
+                        </h3>
                         
-                        <div class="space-y-2 text-sm border-t border-slate-600 pt-4">
-                            <div class="flex justify-between"><span>小計</span><span id="subTotal">$0</span></div>
-                            <div class="flex justify-between text-yellow-400"><span>折扣 (85折)</span><span id="discountVal">-$0</span></div>
-                            <div class="flex justify-between text-xl font-bold text-emerald-400 mt-2"><span>總計</span><span id="finalTotal">$0</span></div>
+                        <div id="cartItems" class="flex-1 space-y-3 overflow-y-auto mb-4 pr-1">
+                            <!-- 購物車項目 -->
                         </div>
-                        <button onclick="submitSale()" id="btnSale" class="w-full mt-4 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold transition">
-                            結帳 (Check Out)
+                        
+                        <div class="space-y-3 border-t border-slate-700 pt-4 bg-slate-900/50 p-4 rounded-lg">
+                            <div class="flex justify-between text-sm text-slate-400">
+                                <span>小計 (Subtotal)</span>
+                                <span id="cartSubtotal">$0</span>
+                            </div>
+                            
+                            <!-- 手動折扣區 -->
+                            <div class="flex items-center justify-between gap-2">
+                                <label class="text-sm text-yellow-500 font-bold whitespace-nowrap">手動折扣 (-)</label>
+                                <input type="number" id="manualDiscount" oninput="calculateTotal()" class="input-dark w-24 p-1 text-right text-yellow-400 rounded text-sm" placeholder="0">
+                            </div>
+
+                            <div class="flex justify-between text-xl font-bold text-emerald-400 border-t border-slate-700 pt-2">
+                                <span>總計 (Total)</span>
+                                <span id="cartFinalTotal">$0</span>
+                            </div>
+
+                            <input type="text" id="posNote" class="input-dark w-full p-2 rounded text-sm" placeholder="📝 訂單備註 (選填)">
+                            
+                            <button onclick="submitSale()" id="btnSale" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold transition shadow-lg shadow-emerald-900/20">
+                                結帳 (Check Out)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Inventory Manager (New) -->
+            <div id="inventory" class="tab-content max-w-2xl mx-auto">
+                <h2 class="text-2xl font-bold mb-6 text-cyan-400">商品資料庫管理</h2>
+                <div class="glass-panel p-8 rounded-xl border-l-4 border-cyan-500">
+                    <p class="text-sm text-slate-400 mb-6">在此新增商品，前端 POS 將自動同步。</p>
+                    <div class="space-y-5">
+                        <div>
+                            <label class="block text-sm text-slate-300 mb-1">商品名稱</label>
+                            <input type="text" id="newProdName" class="input-dark w-full p-3 rounded" placeholder="Ex: 頂級東方美人">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-slate-300 mb-1">銷售定價 (Price)</label>
+                                <input type="number" id="newProdPrice" class="input-dark w-full p-3 rounded" placeholder="450">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-slate-300 mb-1">單位成本 (COGS)</label>
+                                <input type="number" id="newProdCost" class="input-dark w-full p-3 rounded" placeholder="160">
+                            </div>
+                        </div>
+                        <button onclick="addProduct()" id="btnAddProd" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-3 rounded-lg font-bold transition mt-4">
+                            上架新商品 (Add Product)
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- 模組三：費用報支 (Expense Module) -->
+            <!-- Tab 3: Expense -->
             <div id="expense" class="tab-content max-w-2xl mx-auto">
-                <h2 class="text-3xl font-bold mb-6 text-blue-400">智慧餐費歸戶</h2>
+                <h2 class="text-2xl font-bold mb-6 text-blue-400">智慧餐費歸戶</h2>
                 <div class="glass-panel p-8 rounded-xl border-l-4 border-blue-500">
-                    <div class="space-y-6">
+                    <div class="space-y-5">
                         <div>
-                            <label class="block text-sm text-slate-400 mb-1">消費金額</label>
-                            <input type="number" id="expAmount" class="w-full bg-slate-800 border border-slate-600 rounded p-3 text-white focus:border-blue-500 outline-none" placeholder="300">
+                            <label class="block text-sm text-slate-300 mb-1">金額</label>
+                            <input type="number" id="expAmount" class="input-dark w-full p-3 rounded" placeholder="300">
                         </div>
                         <div>
-                            <label class="block text-sm text-slate-400 mb-1">用餐情境 (Auto-Mapping)</label>
-                            <select id="expTag" class="w-full bg-slate-800 border border-slate-600 rounded p-3 text-white focus:border-blue-500 outline-none">
+                            <label class="block text-sm text-slate-300 mb-1">情境</label>
+                            <select id="expTag" class="input-dark w-full p-3 rounded">
                                 <option value="staff">👷 員工/工讀生 (伙食費)</option>
                                 <option value="client">🤝 客戶/廠商 (交際費)</option>
                                 <option value="meeting">📢 內部會議 (會議費)</option>
@@ -104,41 +146,35 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm text-slate-400 mb-1">摘要</label>
-                            <input type="text" id="expDesc" class="w-full bg-slate-800 border border-slate-600 rounded p-3 text-white" placeholder="Ex: 展售會便當">
+                            <label class="block text-sm text-slate-300 mb-1">摘要</label>
+                            <input type="text" id="expDesc" class="input-dark w-full p-3 rounded" placeholder="Ex: 展售會便當">
                         </div>
-                        <button onclick="submitExpense()" id="btnExp" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold transition">
-                            申報費用 (Submit Expense)
-                        </button>
+                        <button onclick="submitExpense()" id="btnExp" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold transition">申報費用</button>
                     </div>
                 </div>
             </div>
 
-            <!-- 模組二：採購付款 (Purchase Module) -->
+            <!-- Tab 4: Purchase -->
             <div id="purchase" class="tab-content max-w-2xl mx-auto">
-                <h2 class="text-3xl font-bold mb-6 text-purple-400">採購付款執行</h2>
+                <h2 class="text-2xl font-bold mb-6 text-purple-400">採購付款執行</h2>
                 <div class="glass-panel p-8 rounded-xl border-l-4 border-purple-500">
-                    <div class="bg-purple-900/30 p-4 rounded mb-6 text-sm text-purple-200">
-                        <i class="fa-solid fa-circle-info"></i> 系統自動判斷 <b>2/10, n/30</b> 付款條件。
-                    </div>
-                    <div class="space-y-6">
+                    <div class="space-y-5">
                         <div>
-                            <label class="block text-sm text-slate-400 mb-1">應付帳款金額</label>
-                            <input type="number" id="payAmount" class="w-full bg-slate-800 border border-slate-600 rounded p-3 text-white" placeholder="45000">
+                            <label class="block text-sm text-slate-300 mb-1">金額</label>
+                            <input type="number" id="payAmount" class="input-dark w-full p-3 rounded" placeholder="45000">
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm text-slate-400 mb-1">發票日期 (Invoice Date)</label>
-                                <input type="date" id="invDate" class="w-full bg-slate-800 border border-slate-600 rounded p-3 text-white">
+                                <label class="block text-sm text-slate-300 mb-1">發票日</label>
+                                <input type="date" id="invDate" class="input-dark w-full p-3 rounded">
                             </div>
                             <div>
-                                <label class="block text-sm text-slate-400 mb-1">付款日期 (Payment Date)</label>
-                                <input type="date" id="payDate" class="w-full bg-slate-800 border border-slate-600 rounded p-3 text-white">
+                                <label class="block text-sm text-slate-300 mb-1">付款日</label>
+                                <input type="date" id="payDate" class="input-dark w-full p-3 rounded">
                             </div>
                         </div>
-                        <button onclick="submitPayment()" id="btnPay" class="w-full bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-lg font-bold transition">
-                            執行付款 (Execute Payment)
-                        </button>
+                        <input type="text" id="payNote" class="input-dark w-full p-3 rounded mt-2" placeholder="備註 (Ex: 匯款末五碼)">
+                        <button onclick="submitPayment()" id="btnPay" class="w-full bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-lg font-bold transition">執行付款</button>
                     </div>
                 </div>
             </div>
@@ -147,18 +183,94 @@
     </div>
 
     <script>
-        // ⚠️ 請填入您的 Google Apps Script 網址
+        // ⚠️ 請填入您重新部署後的 Web App URL (結尾是 /exec)
         const API_URL = "https://script.google.com/macros/s/AKfycbxDcZyACW4wb1DyfZuexXepTSkF0l9nPk1LDAHY4jp1DCI7rKCrOdKD8WAc_EsWCSwZ/exec";
         
-        // --- Tab Switching ---
+        // 全域變數
+        let productList = []; // 存放從後端抓來的商品
+        let cart = [];
+
+        // 初始化
+        function initSystem() {
+            document.getElementById('payDate').valueAsDate = new Date();
+            loadProducts();
+        }
+
+        // Tab 切換
         function switchTab(id) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.getElementById(id).classList.add('active');
         }
 
-        // --- POS Logic ---
-        let cart = [];
-        
+        // --- 核心：商品載入與同步 ---
+        async function loadProducts() {
+            const grid = document.getElementById('productGrid');
+            try {
+                // 嘗試讀取
+                const res = await fetch(API_URL); // GET Request
+                const data = await res.json();
+                
+                if(data.status === "success") {
+                    productList = data.products; // 更新本地清單
+                    renderProductGrid();
+                } else {
+                    grid.innerHTML = `<div class="col-span-full text-red-400">載入失敗: ${data.msg}</div>`;
+                }
+            } catch(e) {
+                console.error(e);
+                // 如果是開發環境或 CORS 錯誤，可能無法讀取
+                // 這裡模擬一個後備資料，防止介面壞掉
+                grid.innerHTML = `<div class="col-span-full text-yellow-500 text-center">
+                    <p>⚠️ 無法連線至雲端庫存 (CORS/Network Error)。</p>
+                    <p class="text-xs mt-2">請確認 Script 已部署為 "Anyone" 權限。</p>
+                </div>`;
+            }
+        }
+
+        function renderProductGrid() {
+            const grid = document.getElementById('productGrid');
+            grid.innerHTML = productList.map(p => `
+                <div onclick="addToCart('${p.id}', '${p.name}', ${p.price}, ${p.cost})" 
+                     class="glass-panel p-4 rounded-xl cursor-pointer hover:bg-slate-800 transition relative group active:scale-95 border-l-4 border-transparent hover:border-emerald-500">
+                    <div class="text-slate-100 font-bold text-lg">${p.name}</div>
+                    <div class="text-emerald-400 font-mono mt-1 text-xl">$${p.price}</div>
+                    <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-emerald-600 text-white text-xs px-2 py-1 rounded shadow-lg">
+                        <i class="fa-solid fa-plus"></i>
+                    </div>
+                </div>
+            `).join('');
+            
+            if(productList.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-slate-500 text-center py-10 border-2 border-dashed border-slate-700 rounded-xl">
+                    <i class="fa-solid fa-box-open text-4xl mb-2"></i><br>目前沒有商品，請至「商品管理」新增。
+                </div>`;
+            }
+        }
+
+        // --- 核心：新增商品 ---
+        function addProduct() {
+            const name = document.getElementById('newProdName').value;
+            const price = document.getElementById('newProdPrice').value;
+            const cost = document.getElementById('newProdCost').value;
+
+            if(!name || !price || !cost) return alert("請完整填寫商品資訊");
+
+            const payload = {
+                action: "add_product",
+                name: name,
+                price: parseInt(price),
+                cost: parseInt(cost)
+            };
+
+            sendData(payload, "btnAddProd", "商品已上架！", () => {
+                document.getElementById('newProdName').value = "";
+                document.getElementById('newProdPrice').value = "";
+                document.getElementById('newProdCost').value = "";
+                loadProducts(); // 重新同步
+            });
+        }
+
+        // --- POS 購物車邏輯 ---
         function addToCart(id, name, price, cost) {
             cart.push({id, name, price, cost});
             renderCart();
@@ -167,117 +279,118 @@
         function renderCart() {
             const container = document.getElementById('cartItems');
             container.innerHTML = cart.map((item, idx) => 
-                `<div class="flex justify-between py-1 border-b border-slate-700">
-                    <span>${item.name}</span>
-                    <span>$${item.price}</span>
-                    <button onclick="cart.splice(${idx},1);renderCart()" class="text-red-400 ml-2">x</button>
+                `<div class="flex justify-between items-center bg-slate-800/50 p-2 rounded border border-slate-700">
+                    <span class="text-sm font-medium">${item.name}</span>
+                    <div class="flex items-center gap-3">
+                        <span class="font-mono text-emerald-400">$${item.price}</span>
+                        <button onclick="cart.splice(${idx},1);renderCart()" class="text-slate-500 hover:text-red-400 transition">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
                 </div>`
             ).join('');
-
-            const total = cart.reduce((sum, item) => sum + item.price, 0);
-            document.getElementById('subTotal').innerText = `$${total}`;
-
-            // 85折邏輯：任選兩入
-            let discount = 0;
-            if (cart.length >= 2) {
-                // 簡易邏輯：全單 85 折 (若需更複雜配對邏輯可再擴充)
-                discount = Math.round(total * 0.15);
-            }
             
-            document.getElementById('discountVal').innerText = `-$${discount}`;
-            document.getElementById('finalTotal').innerText = `$${total - discount}`;
+            document.getElementById('itemCount').innerText = `${cart.length} 項`;
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+            
+            // 讀取手動輸入的折扣
+            const discountInput = document.getElementById('manualDiscount').value;
+            const discount = discountInput ? parseInt(discountInput) : 0;
+            
+            // 計算總額 (不能小於 0)
+            const finalTotal = Math.max(0, subtotal - discount);
+
+            document.getElementById('cartSubtotal').innerText = `$${subtotal}`;
+            document.getElementById('cartFinalTotal').innerText = `$${finalTotal}`;
         }
 
         function submitSale() {
             if (cart.length === 0) return alert("購物車是空的");
             
-            const total = cart.reduce((sum, item) => sum + item.price, 0);
-            const discount = cart.length >= 2 ? Math.round(total * 0.15) : 0;
+            const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+            const discountInput = document.getElementById('manualDiscount').value;
+            const discount = discountInput ? parseInt(discountInput) : 0;
+            const finalTotal = Math.max(0, subtotal - discount);
             const cogs = cart.reduce((sum, item) => sum + item.cost, 0);
+            const note = document.getElementById('posNote').value;
 
             const payload = {
                 action: "record_sale",
-                originalTotal: total,
-                discount: discount,
-                finalTotal: total - discount,
+                originalTotal: subtotal,
+                discount: discount, // 直接傳送手動輸入的金額
+                finalTotal: finalTotal,
                 cogs: cogs,
-                items: cart
+                items: cart,
+                note: note
             };
 
             sendData(payload, "btnSale", "結帳完成！", () => {
-                cart = []; renderCart();
+                cart = []; 
+                document.getElementById('manualDiscount').value = ""; // 清空折扣
+                document.getElementById('posNote').value = "";
+                renderCart();
             });
         }
 
-        // --- Expense Logic ---
+        // --- 其他功能 (Expense, Payment) ---
         function submitExpense() {
             const amount = document.getElementById('expAmount').value;
-            const tag = document.getElementById('expTag').value;
-            const desc = document.getElementById('expDesc').value;
-
             if (!amount) return alert("請輸入金額");
-
             const payload = {
                 action: "record_expense",
                 amount: parseInt(amount),
-                tag: tag,
+                tag: document.getElementById('expTag').value,
                 tagName: document.getElementById('expTag').selectedOptions[0].text,
-                desc: desc
+                desc: document.getElementById('expDesc').value
             };
-
-            sendData(payload, "btnExp", "費用申報成功！", () => {
+            sendData(payload, "btnExp", "申報成功", () => {
                 document.getElementById('expAmount').value = "";
                 document.getElementById('expDesc').value = "";
             });
         }
 
-        // --- Payment Logic ---
         function submitPayment() {
             const amount = document.getElementById('payAmount').value;
             const invDate = document.getElementById('invDate').value;
-            const payDate = document.getElementById('payDate').value || new Date().toISOString().split('T')[0];
-
-            if (!amount || !invDate) return alert("請完整填寫資訊");
-
+            if (!amount || !invDate) return alert("請填寫金額與發票日");
             const payload = {
                 action: "record_purchase_payment",
                 amount: parseInt(amount),
                 invoiceDate: invDate,
-                paymentDate: payDate
+                paymentDate: document.getElementById('payDate').value,
+                note: document.getElementById('payNote').value
             };
-
-            sendData(payload, "btnPay", "付款執行完畢！", (res) => {
-                if(res.discount > 0) alert(`🎉 恭喜！取得現金折扣 $${res.discount}`);
+            sendData(payload, "btnPay", "付款執行完畢", (res) => {
+                if(res.discount > 0) alert(`🎉 取得折扣 $${res.discount}`);
                 document.getElementById('payAmount').value = "";
+                document.getElementById('payNote').value = "";
             });
         }
 
-        // --- Core API Sender ---
-        function sendData(payload, btnId, successMsg, callback) {
+        // 通用 API 發送
+        function sendData(payload, btnId, msg, callback) {
             const btn = document.getElementById(btnId);
-            const originalText = btn.innerText;
+            const originalText = btn.innerHTML;
             btn.disabled = true;
-            btn.innerText = "處理中...";
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> 處理中...`;
 
+            // 使用 POST 避免 URL 長度限制
             fetch(API_URL, {
                 method: "POST",
                 mode: "no-cors",
                 body: JSON.stringify(payload)
-            })
-            .then(() => {
-                alert(successMsg);
-                if (callback) callback();
-            })
-            .catch(err => alert("錯誤: " + err))
-            .finally(() => {
+            }).then(() => {
+                alert(msg);
+                if(callback) callback();
+            }).catch(e => alert("錯誤: " + e)).finally(() => {
                 btn.disabled = false;
-                btn.innerText = originalText;
+                btn.innerHTML = originalText;
             });
         }
-        
-        // Init
-        document.getElementById('payDate').valueAsDate = new Date();
     </script>
 </body>
-
 </html>
