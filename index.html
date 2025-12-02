@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SCA Enterprise ERP v3.0</title>
+    <title>SCA Enterprise ERP v3.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <!-- Chart.js for Reports -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        body { font-family: 'Segoe UI', "Microsoft JhengHei", sans-serif; background-color: #0f172a; color: #f8fafc; }
         .tab-content { display: none; animation: fadeIn 0.3s ease-out; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -33,7 +33,7 @@
                 <h1 class="text-xl font-bold text-emerald-400 flex items-center gap-2">
                     <i class="fa-solid fa-chart-line"></i> SCA ERP Pro
                 </h1>
-                <p class="text-xs text-slate-500 mt-1 pl-1">Financial Suite v3.0</p>
+                <p class="text-xs text-slate-500 mt-1 pl-1">Financial Suite v3.1</p>
             </div>
             
             <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
@@ -66,7 +66,7 @@
         <!-- Main Content -->
         <main class="flex-1 overflow-y-auto p-4 md:p-8 relative bg-gradient-to-br from-slate-900 to-slate-800">
             
-            <!-- Tab 1: POS (維持原樣，但後端已加強稅務) -->
+            <!-- Tab 1: POS -->
             <div id="pos" class="tab-content active max-w-7xl mx-auto h-full flex flex-col">
                 <div class="flex justify-between items-center mb-6">
                     <div>
@@ -111,14 +111,14 @@
                 </div>
             </div>
 
-            <!-- Tab 2: Inventory (已更新：入庫與有效期限) -->
+            <!-- Tab 2: Inventory (含日期與庫存修正) -->
             <div id="inventory" class="tab-content max-w-6xl mx-auto">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-cyan-400">庫存管理</h2>
                     <button onclick="loadProducts()" class="text-sm bg-slate-800 px-3 py-1 rounded text-slate-400 hover:text-white transition"><i class="fa-solid fa-sync"></i> Refresh</button>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <!-- 左側：上架新商品 -->
+                    <!-- 左側：上架 -->
                     <div class="glass-panel p-6 rounded-xl border-t-4 border-cyan-500">
                         <h3 class="text-lg font-bold text-white mb-6">上架新商品</h3>
                         <div class="space-y-4">
@@ -127,8 +127,7 @@
                                 <input type="number" id="newProdPrice" class="input-dark w-full p-3 rounded" placeholder="定價">
                                 <input type="number" id="newProdCost" class="input-dark w-full p-3 rounded" placeholder="成本">
                             </div>
-                            
-                            <!-- ✨ 新增：日期管理區塊 -->
+                            <!-- ✨ 日期欄位 -->
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs text-slate-400 mb-1">入庫日期</label>
@@ -139,12 +138,11 @@
                                     <input type="date" id="newProdExpDate" class="input-dark w-full p-2 rounded text-sm text-gray-300">
                                 </div>
                             </div>
-
                             <input type="number" id="newProdQty" class="input-dark w-full p-3 rounded" placeholder="初始庫存">
                             <button onclick="addProduct()" id="btnAddProd" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-2 rounded font-bold mt-2">上架</button>
                         </div>
                     </div>
-                    <!-- 右側：現有庫存列表 -->
+                    <!-- 右側：列表 -->
                     <div class="lg:col-span-2 glass-panel p-0 rounded-xl border-t-4 border-emerald-500 flex flex-col overflow-hidden">
                         <table class="w-full text-left">
                             <thead class="text-xs text-slate-400 uppercase bg-slate-900/50"><tr><th class="p-4">品名</th><th class="p-4">庫存</th><th class="p-4">操作</th></tr></thead>
@@ -154,7 +152,7 @@
                 </div>
             </div>
 
-            <!-- Tab 3 & 4: Expense & Purchase (簡化顯示，功能維持) -->
+            <!-- Tab 3 & 4: Expense & Purchase -->
             <div id="expense" class="tab-content max-w-2xl mx-auto">
                 <h2 class="text-2xl font-bold mb-6 text-blue-400">費用報支</h2>
                 <div class="glass-panel p-8 rounded-xl border-t-4 border-blue-500 space-y-4">
@@ -175,7 +173,7 @@
                 </div>
             </div>
 
-            <!-- ✨ Tab 5: 手動傳票 (General Voucher) -->
+            <!-- Tab 5: Journal -->
             <div id="journal" class="tab-content max-w-4xl mx-auto">
                 <h2 class="text-2xl font-bold mb-6 text-slate-300">會計傳票 (General Voucher)</h2>
                 <div class="glass-panel p-8 rounded-xl border-t-4 border-slate-500">
@@ -183,16 +181,13 @@
                         <input type="date" id="jnlDate" class="input-dark p-2 rounded">
                         <span class="text-xs text-slate-400">借貸需平衡，否則無法送出</span>
                     </div>
-                    
                     <div id="journalEntries" class="space-y-2 mb-4">
-                        <!-- 動態生成分錄行 -->
                         <div class="grid grid-cols-12 gap-2 text-xs uppercase text-slate-500 mb-1">
                             <div class="col-span-4">科目代碼 (Ex: 1110)</div>
                             <div class="col-span-4">摘要</div>
                             <div class="col-span-2 text-right">借方 (Dr)</div>
                             <div class="col-span-2 text-right">貸方 (Cr)</div>
                         </div>
-                        <!-- 預設兩行 -->
                         <div class="grid grid-cols-12 gap-2 jnl-row">
                             <input type="text" class="col-span-4 input-dark p-2 rounded jnl-ac" placeholder="科目 (如: 2150)">
                             <input type="text" class="col-span-4 input-dark p-2 rounded jnl-desc" placeholder="摘要">
@@ -206,19 +201,17 @@
                             <input type="number" class="col-span-2 input-dark p-2 rounded text-right jnl-cr" placeholder="0" oninput="calcJnlBalance()">
                         </div>
                     </div>
-                    
                     <div class="flex justify-between items-center border-t border-slate-700 pt-4">
                         <button onclick="addJnlRow()" class="text-sm text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-plus"></i> 新增一行</button>
                         <div class="text-right">
                             <div class="text-sm text-slate-400">借貸差額: <span id="jnlDiff" class="text-emerald-400 font-mono font-bold">0</span></div>
                         </div>
                     </div>
-                    
                     <button onclick="submitJournal()" id="btnJnl" class="w-full bg-slate-600 hover:bg-slate-500 text-white py-3 rounded-lg font-bold mt-4 transition">過帳 (Post)</button>
                 </div>
             </div>
 
-            <!-- ✨ Tab 6: 財務報表 (Financial Reports) -->
+            <!-- Tab 6: Reports -->
             <div id="report" class="tab-content max-w-5xl mx-auto">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-amber-400">財務損益表</h2>
@@ -229,9 +222,7 @@
                         <button onclick="generateReport()" id="btnRpt" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded text-sm font-bold transition">生成報表</button>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- 左側：損益表 -->
                     <div class="md:col-span-2 glass-panel p-0 rounded-xl border-t-4 border-amber-500 overflow-hidden">
                         <div class="p-4 bg-slate-900/50 border-b border-slate-700 font-bold">Income Statement (NTD)</div>
                         <table class="w-full text-sm report-table">
@@ -247,8 +238,6 @@
                             * 註：銷項稅額 (Liability) 累計: <span id="rpt-tax" class="text-slate-300 font-mono">0</span>
                         </div>
                     </div>
-
-                    <!-- 右側：分析圖表 -->
                     <div class="glass-panel p-4 rounded-xl">
                         <canvas id="rptChart"></canvas>
                     </div>
@@ -260,7 +249,7 @@
 
     <script>
         // ==========================================
-        // ⚠️ 請填入後端 Web App URL
+        // ⚠️ 請填入您的 Google Apps Script 網址
         // ==========================================
         const API_URL = "https://script.google.com/macros/s/AKfycbxDcZyACW4wb1DyfZuexXepTSkF0l9nPk1LDAHY4jp1DCI7rKCrOdKD8WAc_EsWCSwZ/exec"; 
         // ==========================================
@@ -278,7 +267,7 @@
             document.getElementById('rptStart').valueAsDate = firstDay;
             document.getElementById('rptEnd').valueAsDate = today;
             
-            // ✨ 初始化入庫日期為今天
+            // 初始化入庫日期
             document.getElementById('newProdInDate').valueAsDate = today;
 
             loadProducts();
@@ -287,54 +276,38 @@
         function switchTab(id) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-            
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active', 'text-emerald-400', 'border-r-2', 'border-emerald-400'));
             const activeBtn = document.getElementById('nav-' + id);
             if(activeBtn) activeBtn.classList.add('active');
         }
 
-        // --- 報表邏輯 (New) ---
+        // --- 報表邏輯 ---
         function generateReport() {
             const start = document.getElementById('rptStart').value;
             const end = document.getElementById('rptEnd').value;
-            
             const btn = document.getElementById('btnRpt');
             btn.disabled = true;
             btn.innerText = "計算中...";
 
-            // 使用 GET 請求並帶參數
             const url = `${API_URL}?action=get_report&startDate=${start}&endDate=${end}`;
 
-            fetch(url)
-            .then(res => res.json())
-            .then(data => {
+            fetch(url).then(res => res.json()).then(data => {
                 if(data.status === "success") {
                     const r = data.report;
-                    // 更新表格
                     document.getElementById('rpt-rev').innerText = r.revenue.toLocaleString();
                     document.getElementById('rpt-cogs').innerText = `(${r.cogs.toLocaleString()})`;
                     document.getElementById('rpt-gp').innerText = r.gross_profit.toLocaleString();
                     document.getElementById('rpt-exp').innerText = `(${r.expense.toLocaleString()})`;
                     document.getElementById('rpt-net').innerText = r.net_income.toLocaleString();
                     document.getElementById('rpt-tax').innerText = r.tax.toLocaleString();
-
-                    // 更新圖表
                     updateChart(r);
-                } else {
-                    alert("報表生成失敗: " + data.msg);
-                }
-            })
-            .catch(err => alert("連線錯誤"))
-            .finally(() => {
-                btn.disabled = false;
-                btn.innerText = "生成報表";
-            });
+                } else { alert("失敗: " + data.msg); }
+            }).catch(err => alert("連線錯誤")).finally(() => { btn.disabled = false; btn.innerText = "生成報表"; });
         }
 
         function updateChart(data) {
             const ctx = document.getElementById('rptChart').getContext('2d');
             if(rptChartInstance) rptChartInstance.destroy();
-
             rptChartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
@@ -345,14 +318,11 @@
                         borderWidth: 0
                     }]
                 },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } }
-                }
+                options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } } }
             });
         }
 
-        // --- 傳票邏輯 (New) ---
+        // --- 傳票邏輯 ---
         function addJnlRow() {
             const container = document.getElementById('journalEntries');
             const div = document.createElement('div');
@@ -377,53 +347,39 @@
         }
 
         function submitJournal() {
-            const diff = Number(document.getElementById('jnlDiff').innerText);
-            if(diff !== 0) return alert("借貸不平衡，無法過帳！");
-
-            const rows = document.querySelectorAll('.jnl-row');
+            if(Number(document.getElementById('jnlDiff').innerText) !== 0) return alert("借貸不平衡");
             let entries = [];
-            rows.forEach(row => {
+            document.querySelectorAll('.jnl-row').forEach(row => {
                 const ac = row.querySelector('.jnl-ac').value;
-                const dr = row.querySelector('.jnl-dr').value || 0;
-                const cr = row.querySelector('.jnl-cr').value || 0;
-                const desc = row.querySelector('.jnl-desc').value;
-                if(ac) entries.push({account: ac, dr: dr, cr: cr, desc: desc});
+                if(ac) entries.push({
+                    account: ac, 
+                    desc: row.querySelector('.jnl-desc').value,
+                    dr: row.querySelector('.jnl-dr').value || 0, 
+                    cr: row.querySelector('.jnl-cr').value || 0
+                });
             });
-
-            if(entries.length === 0) return alert("請輸入內容");
-
-            const payload = {
-                action: "record_manual_journal",
-                date: document.getElementById('jnlDate').value,
-                entries: entries
-            };
-
-            sendData(payload, "btnJnl", "傳票已過帳", () => {
+            if(entries.length===0) return alert("請輸入");
+            sendData({action: "record_manual_journal", date: document.getElementById('jnlDate').value, entries: entries}, "btnJnl", "已過帳", () => {
                 document.querySelectorAll('.jnl-dr, .jnl-cr, .jnl-ac, .jnl-desc').forEach(i => i.value = "");
                 calcJnlBalance();
             });
         }
 
-        // --- 以下為既有 POS/Inventory 邏輯 (保持不變) ---
+        // --- POS & 庫存 ---
         async function loadProducts() {
-            const grid = document.getElementById('productGrid');
-            const list = document.getElementById('inventoryList');
             try {
-                const res = await fetch(`${API_URL}?action=get_products`); // 明確指定 action
+                const res = await fetch(`${API_URL}?action=get_products`);
                 const data = await res.json();
                 if(data.status === "success") {
                     productList = data.products;
                     renderProductGrid();
                     renderInventoryList();
-                } else {
-                    grid.innerHTML = "載入失敗";
                 }
             } catch(e) { console.error(e); }
         }
 
         function renderProductGrid() {
-            const grid = document.getElementById('productGrid');
-            grid.innerHTML = productList.map(p => `
+            document.getElementById('productGrid').innerHTML = productList.map(p => `
                 <div onclick="addToCart('${p.id}', '${p.name}', ${p.price}, ${p.cost})" 
                      class="glass-panel p-4 rounded-xl cursor-pointer hover:bg-slate-700 transition active:scale-95 border-l-4 border-transparent hover:border-emerald-500 h-32 flex flex-col justify-between">
                     <div class="text-slate-100 font-bold text-lg line-clamp-2">${p.name}</div>
@@ -434,19 +390,11 @@
                 </div>`).join('');
         }
 
-        // 修改：渲染庫存列表 (含有效期限顯示)
         function renderInventoryList() {
-            const list = document.getElementById('inventoryList');
-            list.innerHTML = productList.map(p => {
-                const expDisplay = p.expDate ? 
-                    `<div class="text-xs text-red-300 mt-1"><i class="fa-regular fa-clock mr-1"></i>Exp: ${p.expDate.split('T')[0]}</div>` : '';
-                
-                return `
-                <tr class="border-b border-slate-700 hover:bg-slate-800">
-                    <td class="p-4">
-                        ${p.name} <span class="text-xs text-slate-500 block">${p.id}</span>
-                        ${expDisplay}
-                    </td>
+            document.getElementById('inventoryList').innerHTML = productList.map(p => {
+                const expDisplay = p.expDate ? `<div class="text-xs text-red-300 mt-1"><i class="fa-regular fa-clock mr-1"></i>Exp: ${p.expDate.split('T')[0]}</div>` : '';
+                return `<tr class="border-b border-slate-700 hover:bg-slate-800">
+                    <td class="p-4">${p.name} <span class="text-xs text-slate-500 block">${p.id}</span>${expDisplay}</td>
                     <td class="p-4"><input type="number" id="stock-${p.id}" value="${p.qty}" class="input-dark w-20 p-1 text-center" onchange="document.getElementById('btn-upd-${p.id}').classList.remove('invisible')"></td>
                     <td class="p-4"><button id="btn-upd-${p.id}" onclick="updateStock('${p.id}')" class="invisible bg-emerald-600 text-white px-3 py-1 rounded text-xs">更新</button></td>
                 </tr>`;
@@ -454,20 +402,13 @@
         }
 
         function addToCart(id, name, price, cost) {
-            // 檢查購物車內是否已有該商品
-            const existingItem = cart.find(item => item.id === id);
-            
-            if (existingItem) {
-                existingItem.qty += 1; // 數量 +1
-            } else {
-                cart.push({id, name, price, cost, qty: 1}); // 新增項目，預設數量 1
-            }
+            const item = cart.find(i => i.id === id);
+            if(item) item.qty++; else cart.push({id, name, price, cost, qty: 1});
             renderCart();
         }
 
         function renderCart() {
-            const container = document.getElementById('cartItems');
-            container.innerHTML = cart.map((item, idx) => `
+            document.getElementById('cartItems').innerHTML = cart.map((item, idx) => `
                 <div class="flex justify-between items-center bg-slate-800 p-2 rounded mb-2 border border-slate-700">
                     <div class="flex-1">
                         <span class="text-sm block text-slate-200">${item.name}</span>
@@ -475,25 +416,17 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="font-mono text-emerald-400 font-bold text-sm">$${item.price * item.qty}</span>
-                        <button onclick="changeQty(${idx}, -1)" class="text-slate-400 hover:text-white bg-slate-700 px-2 py-0.5 rounded text-sm transition">-</button>
-                        <button onclick="changeQty(${idx}, 1)" class="text-slate-400 hover:text-white bg-slate-700 px-2 py-0.5 rounded text-sm transition">+</button>
+                        <button onclick="changeQty(${idx}, -1)" class="text-slate-400 hover:text-white bg-slate-700 px-2 py-0.5 rounded text-sm">-</button>
+                        <button onclick="changeQty(${idx}, 1)" class="text-slate-400 hover:text-white bg-slate-700 px-2 py-0.5 rounded text-sm">+</button>
                     </div>
                 </div>`).join('');
-            
-            // 計算總件數
-            const totalCount = cart.reduce((sum, item) => sum + item.qty, 0);
-            document.getElementById('itemCount').innerText = totalCount;
+            document.getElementById('itemCount').innerText = cart.reduce((s, i) => s + i.qty, 0);
             calculateTotal();
         }
-        
-        function changeQty(idx, delta) {
-            if (cart[idx].qty + delta <= 0) {
-                if(confirm("確定移除此商品？")) {
-                    cart.splice(idx, 1);
-                }
-            } else {
-                cart[idx].qty += delta;
-            }
+
+        function changeQty(idx, d) {
+            if(cart[idx].qty + d <= 0) { if(confirm("移除?")) cart.splice(idx, 1); } 
+            else cart[idx].qty += d;
             renderCart();
         }
 
@@ -505,61 +438,41 @@
         }
 
         function updateStock(id) {
-            const qty = document.getElementById(`stock-${id}`).value;
-            sendData({action: "update_inventory", id: id, qty: qty}, `btn-upd-${id}`, "已更新", () => {
-                document.getElementById(`btn-upd-${id}`).classList.add('invisible');
-                loadProducts();
+            sendData({action: "update_inventory", id: id, qty: document.getElementById(`stock-${id}`).value}, `btn-upd-${id}`, "已更新", () => {
+                document.getElementById(`btn-upd-${id}`).classList.add('invisible'); loadProducts();
             });
         }
 
         function addProduct() {
-            const payload = {
+            sendData({
                 action: "add_product",
                 name: document.getElementById('newProdName').value,
                 price: document.getElementById('newProdPrice').value,
                 cost: document.getElementById('newProdCost').value,
                 qty: document.getElementById('newProdQty').value,
-                // ✨ 新增：傳送日期欄位
                 inboundDate: document.getElementById('newProdInDate').value,
                 expiryDate: document.getElementById('newProdExpDate').value
-            };
-            sendData(payload, "btnAddProd", "已上架", () => { loadProducts(); });
+            }, "btnAddProd", "已上架", () => { loadProducts(); });
         }
 
         function submitSale() {
-            if(cart.length===0) return alert("空購物車");
-            
+            if(cart.length===0) return alert("空車");
             const sub = cart.reduce((s, i) => s + (i.price * i.qty), 0);
             const disc = Number(document.getElementById('manualDiscount').value) || 0;
             const total = Math.max(0, sub - disc);
             const cogs = cart.reduce((s, i) => s + (i.cost * i.qty), 0);
-            
             sendData({
-                action: "record_sale",
-                originalTotal: sub, discount: disc, finalTotal: total, cogs: cogs,
-                items: cart, // cart 現在包含正確 qty
-                note: document.getElementById('posNote').value
-            }, "btnSale", "結帳完成", () => {
-                cart = []; renderCart(); loadProducts();
-            });
+                action: "record_sale", originalTotal: sub, discount: disc, finalTotal: total, cogs: cogs,
+                items: cart, note: document.getElementById('posNote').value
+            }, "btnSale", "完成", () => { cart=[]; renderCart(); loadProducts(); });
         }
 
         function submitExpense() {
-            sendData({
-                action: "record_expense",
-                amount: document.getElementById('expAmount').value,
-                tag: document.getElementById('expTag').value,
-                desc: document.getElementById('expDesc').value
-            }, "btnExp", "已申報", () => {});
+            sendData({action: "record_expense", amount: document.getElementById('expAmount').value, tag: document.getElementById('expTag').value, desc: document.getElementById('expDesc').value}, "btnExp", "已申報", () => {});
         }
 
         function submitPayment() {
-            sendData({
-                action: "record_purchase_payment",
-                amount: document.getElementById('payAmount').value,
-                invoiceDate: document.getElementById('invDate').value,
-                note: document.getElementById('payNote').value
-            }, "btnPay", "已付款", () => {});
+            sendData({action: "record_purchase_payment", amount: document.getElementById('payAmount').value, invoiceDate: document.getElementById('invDate').value, note: document.getElementById('payNote').value}, "btnPay", "已付款", () => {});
         }
 
         function sendData(payload, btnId, msg, callback) {
@@ -573,4 +486,3 @@
     </script>
 </body>
 </html>
-
