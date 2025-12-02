@@ -426,27 +426,56 @@
                 </tr>`).join('');
         }
 
+        // 修改：加入商品到購物車邏輯 (合併相同商品)
         function addToCart(id, name, price, cost) {
-            cart.push({id, name, price, cost});
+            // 檢查購物車內是否已有該商品
+            const existingItem = cart.find(item => item.id === id);
+            
+            if (existingItem) {
+                existingItem.qty += 1; // 數量 +1
+            } else {
+                cart.push({id, name, price, cost, qty: 1}); // 新增項目，預設數量 1
+            }
             renderCart();
         }
 
+        // 修改：渲染購物車 (支援加減數量按鈕)
         function renderCart() {
             const container = document.getElementById('cartItems');
             container.innerHTML = cart.map((item, idx) => `
                 <div class="flex justify-between items-center bg-slate-800 p-2 rounded mb-2 border border-slate-700">
-                    <span class="text-sm">${item.name}</span>
+                    <div class="flex-1">
+                        <span class="text-sm block text-slate-200">${item.name}</span>
+                        <span class="text-xs text-slate-400">$${item.price} x ${item.qty}</span>
+                    </div>
                     <div class="flex items-center gap-2">
-                        <span class="font-mono text-emerald-400">$${item.price}</span>
-                        <button onclick="cart.splice(${idx},1);renderCart()" class="text-slate-500 hover:text-red-400"><i class="fa-solid fa-xmark"></i></button>
+                        <span class="font-mono text-emerald-400 font-bold text-sm">$${item.price * item.qty}</span>
+                        <button onclick="changeQty(${idx}, -1)" class="text-slate-400 hover:text-white bg-slate-700 px-2 py-0.5 rounded text-sm transition">-</button>
+                        <button onclick="changeQty(${idx}, 1)" class="text-slate-400 hover:text-white bg-slate-700 px-2 py-0.5 rounded text-sm transition">+</button>
                     </div>
                 </div>`).join('');
-            document.getElementById('itemCount').innerText = cart.length;
+            
+            // 計算總件數
+            const totalCount = cart.reduce((sum, item) => sum + item.qty, 0);
+            document.getElementById('itemCount').innerText = totalCount;
             calculateTotal();
         }
+        
+        // 新增：更改數量
+        function changeQty(idx, delta) {
+            if (cart[idx].qty + delta <= 0) {
+                if(confirm("確定移除此商品？")) {
+                    cart.splice(idx, 1);
+                }
+            } else {
+                cart[idx].qty += delta;
+            }
+            renderCart();
+        }
 
+        // 修改：計算總金額 (包含數量)
         function calculateTotal() {
-            const sub = cart.reduce((s, i) => s + i.price, 0);
+            const sub = cart.reduce((s, i) => s + (i.price * i.qty), 0);
             const disc = Number(document.getElementById('manualDiscount').value) || 0;
             document.getElementById('cartSubtotal').innerText = `$${sub}`;
             document.getElementById('cartFinalTotal').innerText = `$${Math.max(0, sub - disc)}`;
@@ -471,17 +500,20 @@
             sendData(payload, "btnAddProd", "已上架", () => { loadProducts(); });
         }
 
+        // 修改：結帳送出 (計算總成本與金額需包含數量)
         function submitSale() {
             if(cart.length===0) return alert("空購物車");
-            const sub = cart.reduce((s, i) => s + i.price, 0);
+            
+            const sub = cart.reduce((s, i) => s + (i.price * i.qty), 0);
             const disc = Number(document.getElementById('manualDiscount').value) || 0;
             const total = Math.max(0, sub - disc);
-            const cogs = cart.reduce((s, i) => s + i.cost, 0);
+            const cogs = cart.reduce((s, i) => s + (i.cost * i.qty), 0);
             
             sendData({
                 action: "record_sale",
                 originalTotal: sub, discount: disc, finalTotal: total, cogs: cogs,
-                items: cart, note: document.getElementById('posNote').value
+                items: cart, // cart 現在包含正確 qty
+                note: document.getElementById('posNote').value
             }, "btnSale", "結帳完成", () => {
                 cart = []; renderCart(); loadProducts();
             });
