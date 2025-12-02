@@ -1,4 +1,4 @@
-d<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -52,7 +52,7 @@ d<!DOCTYPE html>
                     <i class="fa-solid fa-cash-register w-5 text-center"></i> POS 結帳台
                 </button>
                 <button onclick="switchTab('inventory')" id="nav-inventory" class="nav-btn w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 transition flex items-center gap-3">
-                    <i class="fa-solid fa-boxes-stacked w-5 text-center"></i> 商品與庫存 (New)
+                    <i class="fa-solid fa-boxes-stacked w-5 text-center"></i> 商品與庫存
                 </button>
                 <button onclick="switchTab('expense')" id="nav-expense" class="nav-btn w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 transition flex items-center gap-3">
                     <i class="fa-solid fa-receipt w-5 text-center"></i> 費用報支
@@ -133,7 +133,7 @@ d<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- 分頁 2: 商品與庫存管理 (Updated) -->
+            <!-- 分頁 2: 商品與庫存管理 (雙欄式) -->
             <div id="inventory" class="tab-content max-w-6xl mx-auto h-full flex flex-col">
                 <div class="flex justify-between items-center mb-6">
                     <div>
@@ -175,7 +175,7 @@ d<!DOCTYPE html>
                         </div>
                     </div>
 
-                    <!-- Col 2: Manage Existing Stock (New Feature) -->
+                    <!-- Col 2: Manage Existing Stock (直接輸入更新) -->
                     <div class="lg:col-span-2 glass-panel p-0 rounded-xl border-t-4 border-emerald-500 flex flex-col overflow-hidden">
                         <div class="p-4 border-b border-slate-700 bg-slate-900/50">
                             <h3 class="text-lg font-bold text-white flex items-center gap-2">
@@ -276,7 +276,7 @@ d<!DOCTYPE html>
         // ==========================================
         // ⚠️ 請填入您的 Google Apps Script 網址
         // ==========================================
-        const API_URL = "https://script.google.com/macros/s/AKfycbxDcZyACW4wb1DyfZuexXepTSkF0l9nPk1LDAHY4jp1DCI7rKCrOdKD8WAc_EsWCSwZ/exec";
+        const API_URL = "https://script.google.com/macros/s/您的_SCRIPT_ID/exec"; 
         // ==========================================
         
         // 全域變數
@@ -310,7 +310,7 @@ d<!DOCTYPE html>
                 if(data.status === "success") {
                     productList = data.products;
                     renderProductGrid();     // 更新 POS 網格
-                    renderInventoryList();   // 更新庫存管理列表 (New)
+                    renderInventoryList();   // 更新庫存管理列表
                 } else {
                     grid.innerHTML = `<div class="col-span-full text-red-400 text-center">載入失敗: ${data.msg}</div>`;
                 }
@@ -342,13 +342,16 @@ d<!DOCTYPE html>
                 return `
                 <div onclick="addToCart('${p.id}', '${p.name}', ${p.price}, ${p.cost})" 
                      class="glass-panel p-4 rounded-xl cursor-pointer hover:bg-slate-700 transition relative group active:scale-95 border-l-4 border-transparent hover:border-emerald-500 flex flex-col justify-between h-32">
+                    
                     <div class="text-slate-100 font-bold text-lg leading-tight line-clamp-2">${p.name}</div>
+                    
                     <div class="flex justify-between items-end mt-2">
                         <div class="text-emerald-400 font-mono text-xl font-bold">$${p.price}</div>
                         <div class="text-xs ${qtyClass} bg-slate-900/50 px-2 py-1 rounded">
                             ${qtyIcon}庫存: ${p.qty}
                         </div>
                     </div>
+
                     <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 bg-emerald-600 text-white w-8 h-8 flex items-center justify-center rounded-full shadow-lg transition-all transform group-hover:scale-110">
                         <i class="fa-solid fa-plus"></i>
                     </div>
@@ -356,7 +359,7 @@ d<!DOCTYPE html>
             `}).join('');
         }
 
-        // --- 新功能：庫存列表與更新 ---
+        // --- 新功能：庫存列表與更新 (對應後端 v2.3) ---
         function renderInventoryList() {
             const list = document.getElementById('inventoryList');
             if(productList.length === 0) {
@@ -365,7 +368,7 @@ d<!DOCTYPE html>
             }
             
             list.innerHTML = productList.map(p => `
-                <tr class="hover:bg-slate-800/50 transition">
+                <tr class="hover:bg-slate-800/50 transition border-b border-slate-700">
                     <td class="p-4">
                         <div class="font-bold text-slate-200">${p.name}</div>
                         <div class="text-xs text-slate-500">ID: ${p.id}</div>
@@ -395,8 +398,6 @@ d<!DOCTYPE html>
                 qty: parseInt(newQty)
             };
 
-            // 這裡發送請求 (注意：若後端尚未支援 update_inventory，此處會報錯，請確保後端已同步更新或使用 add_product 覆蓋)
-            // 由於您在會話中沒有提供後端更新庫存的接口，此處暫時發送，請記得更新後端。
             sendData(payload, `btn-update-${id}`, "庫存更新成功", () => {
                 btn.classList.add('invisible'); // 隱藏按鈕
                 loadProducts(); // 重新整理
@@ -439,6 +440,7 @@ d<!DOCTYPE html>
 
         function renderCart() {
             const container = document.getElementById('cartItems');
+            
             if(cart.length === 0) {
                 container.innerHTML = `<div class="text-center text-slate-600 mt-10 text-sm italic">
                     <i class="fa-solid fa-basket-shopping text-2xl mb-2 opacity-30"></i><br>購物車是空的
@@ -463,8 +465,12 @@ d<!DOCTYPE html>
 
         function calculateTotal() {
             const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+            
+            // 讀取手動輸入的折扣
             const discountInput = document.getElementById('manualDiscount').value;
             const discount = discountInput ? parseInt(discountInput) : 0;
+            
+            // 計算總額 (不能小於 0)
             const finalTotal = Math.max(0, subtotal - discount);
 
             document.getElementById('cartSubtotal').innerText = `$${subtotal}`;
@@ -484,7 +490,7 @@ d<!DOCTYPE html>
             const payload = {
                 action: "record_sale",
                 originalTotal: subtotal,
-                discount: discount,
+                discount: discount, // 直接傳送手動輸入的金額
                 finalTotal: finalTotal,
                 cogs: cogs,
                 items: cart,
@@ -567,6 +573,3 @@ d<!DOCTYPE html>
     </script>
 </body>
 </html>
-
-
-
