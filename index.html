@@ -111,13 +111,14 @@
                 </div>
             </div>
 
-            <!-- Tab 2: Inventory (維持原樣) -->
+            <!-- Tab 2: Inventory (已更新：入庫與有效期限) -->
             <div id="inventory" class="tab-content max-w-6xl mx-auto">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-cyan-400">庫存管理</h2>
                     <button onclick="loadProducts()" class="text-sm bg-slate-800 px-3 py-1 rounded text-slate-400 hover:text-white transition"><i class="fa-solid fa-sync"></i> Refresh</button>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- 左側：上架新商品 -->
                     <div class="glass-panel p-6 rounded-xl border-t-4 border-cyan-500">
                         <h3 class="text-lg font-bold text-white mb-6">上架新商品</h3>
                         <div class="space-y-4">
@@ -126,10 +127,24 @@
                                 <input type="number" id="newProdPrice" class="input-dark w-full p-3 rounded" placeholder="定價">
                                 <input type="number" id="newProdCost" class="input-dark w-full p-3 rounded" placeholder="成本">
                             </div>
+                            
+                            <!-- ✨ 新增：日期管理區塊 -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1">入庫日期</label>
+                                    <input type="date" id="newProdInDate" class="input-dark w-full p-2 rounded text-sm text-gray-300">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-red-300 mb-1">有效期限</label>
+                                    <input type="date" id="newProdExpDate" class="input-dark w-full p-2 rounded text-sm text-gray-300">
+                                </div>
+                            </div>
+
                             <input type="number" id="newProdQty" class="input-dark w-full p-3 rounded" placeholder="初始庫存">
                             <button onclick="addProduct()" id="btnAddProd" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-2 rounded font-bold mt-2">上架</button>
                         </div>
                     </div>
+                    <!-- 右側：現有庫存列表 -->
                     <div class="lg:col-span-2 glass-panel p-0 rounded-xl border-t-4 border-emerald-500 flex flex-col overflow-hidden">
                         <table class="w-full text-left">
                             <thead class="text-xs text-slate-400 uppercase bg-slate-900/50"><tr><th class="p-4">品名</th><th class="p-4">庫存</th><th class="p-4">操作</th></tr></thead>
@@ -247,7 +262,7 @@
         // ==========================================
         // ⚠️ 請填入後端 Web App URL
         // ==========================================
-        const API_URL = "https://script.google.com/macros/s/AKfycbxDcZyACW4wb1DyfZuexXepTSkF0l9nPk1LDAHY4jp1DCI7rKCrOdKD8WAc_EsWCSwZ/exec"; 
+        const API_URL = "https://script.google.com/macros/s/您的_SCRIPT_ID/exec"; 
         // ==========================================
         
         let productList = []; 
@@ -263,6 +278,9 @@
             document.getElementById('rptStart').valueAsDate = firstDay;
             document.getElementById('rptEnd').valueAsDate = today;
             
+            // ✨ 初始化入庫日期為今天
+            document.getElementById('newProdInDate').valueAsDate = today;
+
             loadProducts();
         }
 
@@ -416,17 +434,25 @@
                 </div>`).join('');
         }
 
+        // 修改：渲染庫存列表 (含有效期限顯示)
         function renderInventoryList() {
             const list = document.getElementById('inventoryList');
-            list.innerHTML = productList.map(p => `
+            list.innerHTML = productList.map(p => {
+                const expDisplay = p.expDate ? 
+                    `<div class="text-xs text-red-300 mt-1"><i class="fa-regular fa-clock mr-1"></i>Exp: ${p.expDate.split('T')[0]}</div>` : '';
+                
+                return `
                 <tr class="border-b border-slate-700 hover:bg-slate-800">
-                    <td class="p-4">${p.name} <span class="text-xs text-slate-500 block">${p.id}</span></td>
+                    <td class="p-4">
+                        ${p.name} <span class="text-xs text-slate-500 block">${p.id}</span>
+                        ${expDisplay}
+                    </td>
                     <td class="p-4"><input type="number" id="stock-${p.id}" value="${p.qty}" class="input-dark w-20 p-1 text-center" onchange="document.getElementById('btn-upd-${p.id}').classList.remove('invisible')"></td>
                     <td class="p-4"><button id="btn-upd-${p.id}" onclick="updateStock('${p.id}')" class="invisible bg-emerald-600 text-white px-3 py-1 rounded text-xs">更新</button></td>
-                </tr>`).join('');
+                </tr>`;
+            }).join('');
         }
 
-        // 修改：加入商品到購物車邏輯 (合併相同商品)
         function addToCart(id, name, price, cost) {
             // 檢查購物車內是否已有該商品
             const existingItem = cart.find(item => item.id === id);
@@ -439,7 +465,6 @@
             renderCart();
         }
 
-        // 修改：渲染購物車 (支援加減數量按鈕)
         function renderCart() {
             const container = document.getElementById('cartItems');
             container.innerHTML = cart.map((item, idx) => `
@@ -461,7 +486,6 @@
             calculateTotal();
         }
         
-        // 新增：更改數量
         function changeQty(idx, delta) {
             if (cart[idx].qty + delta <= 0) {
                 if(confirm("確定移除此商品？")) {
@@ -473,7 +497,6 @@
             renderCart();
         }
 
-        // 修改：計算總金額 (包含數量)
         function calculateTotal() {
             const sub = cart.reduce((s, i) => s + (i.price * i.qty), 0);
             const disc = Number(document.getElementById('manualDiscount').value) || 0;
@@ -495,12 +518,14 @@
                 name: document.getElementById('newProdName').value,
                 price: document.getElementById('newProdPrice').value,
                 cost: document.getElementById('newProdCost').value,
-                qty: document.getElementById('newProdQty').value
+                qty: document.getElementById('newProdQty').value,
+                // ✨ 新增：傳送日期欄位
+                inboundDate: document.getElementById('newProdInDate').value,
+                expiryDate: document.getElementById('newProdExpDate').value
             };
             sendData(payload, "btnAddProd", "已上架", () => { loadProducts(); });
         }
 
-        // 修改：結帳送出 (計算總成本與金額需包含數量)
         function submitSale() {
             if(cart.length===0) return alert("空購物車");
             
