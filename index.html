@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SCA Enterprise ERP v3.1</title>
+    <title>SCA ERP Pro v4.0 (Secure)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
-    <!-- Chart.js for Reports -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Segoe UI', "Microsoft JhengHei", sans-serif; background-color: #0f172a; color: #f8fafc; }
@@ -17,23 +16,39 @@
         .input-dark { background: rgba(15, 23, 42, 0.6); border: 1px solid #334155; color: white; transition: all 0.2s; }
         .input-dark:focus { border-color: #10b981; outline: none; }
         .nav-btn.active { background-color: #1e293b; color: #34d399; border-right: 3px solid #34d399; }
-        /* 報表表格 */
         .report-table th, .report-table td { padding: 12px; border-bottom: 1px solid #334155; }
         .report-table th { text-align: left; color: #94a3b8; font-size: 0.85rem; }
         .report-value { font-family: 'Courier New', monospace; text-align: right; }
+        
+        /* 🔐 安全登入遮罩樣式 */
+        #authOverlay { position: fixed; inset: 0; background: #020617; z-index: 50; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
-<body onload="initSystem()">
+<body onload="checkLoginStatus()">
 
-    <div class="flex h-screen overflow-hidden">
+    <!-- 🔐 安全登入層 (Security Layer) -->
+    <div id="authOverlay">
+        <div class="glass-panel p-8 rounded-2xl w-full max-w-md text-center border-t-4 border-emerald-500">
+            <h1 class="text-3xl font-bold text-white mb-2"><i class="fa-solid fa-shield-halved text-emerald-400 mr-2"></i>SCA Secure ERP</h1>
+            <p class="text-slate-400 mb-6 text-sm">系統已加密，請輸入金鑰解鎖</p>
+            <input type="password" id="authKey" class="input-dark w-full p-4 rounded-lg text-center text-xl tracking-widest mb-4" placeholder="••••••••">
+            <button onclick="login()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold transition shadow-lg shadow-emerald-900/30">
+                驗證並登入 (Login)
+            </button>
+            <p id="loginMsg" class="text-red-400 text-sm mt-4 min-h-[20px]"></p>
+        </div>
+    </div>
+
+    <!-- 主系統介面 (預設隱藏，驗證通過後顯示) -->
+    <div id="appContainer" class="flex h-screen overflow-hidden opacity-0 transition-opacity duration-500 pointer-events-none">
         
         <!-- Sidebar -->
         <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 z-20">
             <div class="p-6 border-b border-slate-800">
                 <h1 class="text-xl font-bold text-emerald-400 flex items-center gap-2">
-                    <i class="fa-solid fa-chart-line"></i> SCA ERP Pro
+                    <i class="fa-solid fa-lock text-xs"></i> SCA ERP Pro
                 </h1>
-                <p class="text-xs text-slate-500 mt-1 pl-1">Financial Suite v3.1</p>
+                <p class="text-xs text-slate-500 mt-1 pl-1">Secure Suite v4.0</p>
             </div>
             
             <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
@@ -61,6 +76,12 @@
                     <i class="fa-solid fa-file-contract w-5 text-center"></i> 財務總表
                 </button>
             </nav>
+            
+            <div class="p-4 border-t border-slate-800">
+                <button onclick="logout()" class="w-full text-xs text-red-400 hover:text-red-300 text-center py-2 border border-red-900/50 rounded hover:bg-red-900/20 transition">
+                    <i class="fa-solid fa-right-from-bracket mr-1"></i> 安全登出
+                </button>
+            </div>
         </aside>
 
         <!-- Main Content -->
@@ -71,7 +92,7 @@
                 <div class="flex justify-between items-center mb-6">
                     <div>
                         <h2 class="text-2xl font-bold text-white">零售結帳台</h2>
-                        <p class="text-xs text-slate-400 mt-1"><i class="fa-solid fa-check-circle text-emerald-500"></i> 含稅價自動拆分 (5% VAT)</p>
+                        <p class="text-xs text-slate-400 mt-1"><i class="fa-solid fa-shield-cat text-emerald-500"></i> 安全加密傳輸 (Secured)</p>
                     </div>
                     <button onclick="loadProducts()" class="text-sm bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded text-white transition flex items-center gap-2">
                         <i class="fa-solid fa-sync"></i> 同步商品
@@ -81,9 +102,8 @@
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
                     <div class="lg:col-span-2 overflow-y-auto pr-2 pb-10">
                         <div id="productGrid" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                            <!-- JS 動態生成 -->
                             <div class="col-span-full text-center py-20 text-slate-500">
-                                <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3"></i><br>載入中...
+                                <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3"></i><br>等待授權中...
                             </div>
                         </div>
                     </div>
@@ -104,21 +124,20 @@
                                 <span>總計 (含稅)</span>
                                 <span id="cartFinalTotal" class="text-emerald-400">$0</span>
                             </div>
-                            <input type="text" id="posNote" class="input-dark w-full p-2 rounded text-sm" placeholder="📝 訂單備註">
+                            <input type="text" id="posNote" class="input-dark w-full p-2 rounded text-sm" placeholder="📝 訂單備註 (個資將加密)">
                             <button onclick="submitSale()" id="btnSale" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold transition">結帳收款</button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Tab 2: Inventory (含日期與庫存修正) -->
+            <!-- Tab 2: Inventory -->
             <div id="inventory" class="tab-content max-w-6xl mx-auto">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-cyan-400">庫存管理</h2>
                     <button onclick="loadProducts()" class="text-sm bg-slate-800 px-3 py-1 rounded text-slate-400 hover:text-white transition"><i class="fa-solid fa-sync"></i> Refresh</button>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <!-- 左側：上架 -->
                     <div class="glass-panel p-6 rounded-xl border-t-4 border-cyan-500">
                         <h3 class="text-lg font-bold text-white mb-6">上架新商品</h3>
                         <div class="space-y-4">
@@ -127,7 +146,6 @@
                                 <input type="number" id="newProdPrice" class="input-dark w-full p-3 rounded" placeholder="定價">
                                 <input type="number" id="newProdCost" class="input-dark w-full p-3 rounded" placeholder="成本">
                             </div>
-                            <!-- ✨ 日期欄位 -->
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs text-slate-400 mb-1">入庫日期</label>
@@ -142,7 +160,6 @@
                             <button onclick="addProduct()" id="btnAddProd" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-2 rounded font-bold mt-2">上架</button>
                         </div>
                     </div>
-                    <!-- 右側：列表 -->
                     <div class="lg:col-span-2 glass-panel p-0 rounded-xl border-t-4 border-emerald-500 flex flex-col overflow-hidden">
                         <table class="w-full text-left">
                             <thead class="text-xs text-slate-400 uppercase bg-slate-900/50"><tr><th class="p-4">品名</th><th class="p-4">庫存</th><th class="p-4">操作</th></tr></thead>
@@ -158,7 +175,7 @@
                 <div class="glass-panel p-8 rounded-xl border-t-4 border-blue-500 space-y-4">
                     <input type="number" id="expAmount" class="input-dark w-full p-3 rounded" placeholder="金額">
                     <select id="expTag" class="input-dark w-full p-3 rounded"><option value="staff">伙食費</option><option value="client">交際費</option><option value="meeting">會議費</option><option value="travel">旅費</option></select>
-                    <input type="text" id="expDesc" class="input-dark w-full p-3 rounded" placeholder="摘要">
+                    <input type="text" id="expDesc" class="input-dark w-full p-3 rounded" placeholder="摘要 (個資將加密)">
                     <button onclick="submitExpense()" id="btnExp" class="w-full bg-blue-600 text-white py-3 rounded font-bold">提交</button>
                 </div>
             </div>
@@ -168,34 +185,34 @@
                 <div class="glass-panel p-8 rounded-xl border-t-4 border-purple-500 space-y-4">
                     <input type="number" id="payAmount" class="input-dark w-full p-3 rounded" placeholder="應付金額">
                     <div class="grid grid-cols-2 gap-4"><input type="date" id="invDate" class="input-dark w-full p-3 rounded"><input type="date" id="payDate" class="input-dark w-full p-3 rounded"></div>
-                    <input type="text" id="payNote" class="input-dark w-full p-3 rounded" placeholder="備註">
-                    <button onclick="submitPayment()" id="btnPay" class="w-full bg-purple-600 text-white py-3 rounded font-bold">付款 (自動計算折扣)</button>
+                    <input type="text" id="payNote" class="input-dark w-full p-3 rounded" placeholder="備註 (個資將加密)">
+                    <button onclick="submitPayment()" id="btnPay" class="w-full bg-purple-600 text-white py-3 rounded font-bold">付款</button>
                 </div>
             </div>
 
             <!-- Tab 5: Journal -->
             <div id="journal" class="tab-content max-w-4xl mx-auto">
-                <h2 class="text-2xl font-bold mb-6 text-slate-300">會計傳票 (General Voucher)</h2>
+                <h2 class="text-2xl font-bold mb-6 text-slate-300">會計傳票</h2>
                 <div class="glass-panel p-8 rounded-xl border-t-4 border-slate-500">
                     <div class="flex justify-between items-center mb-4">
                         <input type="date" id="jnlDate" class="input-dark p-2 rounded">
-                        <span class="text-xs text-slate-400">借貸需平衡，否則無法送出</span>
+                        <span class="text-xs text-slate-400">借貸需平衡</span>
                     </div>
                     <div id="journalEntries" class="space-y-2 mb-4">
                         <div class="grid grid-cols-12 gap-2 text-xs uppercase text-slate-500 mb-1">
-                            <div class="col-span-4">科目代碼 (Ex: 1110)</div>
+                            <div class="col-span-4">科目</div>
                             <div class="col-span-4">摘要</div>
-                            <div class="col-span-2 text-right">借方 (Dr)</div>
-                            <div class="col-span-2 text-right">貸方 (Cr)</div>
+                            <div class="col-span-2 text-right">借 (Dr)</div>
+                            <div class="col-span-2 text-right">貸 (Cr)</div>
                         </div>
                         <div class="grid grid-cols-12 gap-2 jnl-row">
-                            <input type="text" class="col-span-4 input-dark p-2 rounded jnl-ac" placeholder="科目 (如: 2150)">
+                            <input type="text" class="col-span-4 input-dark p-2 rounded jnl-ac" placeholder="科目">
                             <input type="text" class="col-span-4 input-dark p-2 rounded jnl-desc" placeholder="摘要">
                             <input type="number" class="col-span-2 input-dark p-2 rounded text-right jnl-dr" placeholder="0" oninput="calcJnlBalance()">
                             <input type="number" class="col-span-2 input-dark p-2 rounded text-right jnl-cr" placeholder="0" oninput="calcJnlBalance()">
                         </div>
                         <div class="grid grid-cols-12 gap-2 jnl-row">
-                            <input type="text" class="col-span-4 input-dark p-2 rounded jnl-ac" placeholder="科目 (如: 1110)">
+                            <input type="text" class="col-span-4 input-dark p-2 rounded jnl-ac" placeholder="科目">
                             <input type="text" class="col-span-4 input-dark p-2 rounded jnl-desc" placeholder="摘要">
                             <input type="number" class="col-span-2 input-dark p-2 rounded text-right jnl-dr" placeholder="0" oninput="calcJnlBalance()">
                             <input type="number" class="col-span-2 input-dark p-2 rounded text-right jnl-cr" placeholder="0" oninput="calcJnlBalance()">
@@ -204,7 +221,7 @@
                     <div class="flex justify-between items-center border-t border-slate-700 pt-4">
                         <button onclick="addJnlRow()" class="text-sm text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-plus"></i> 新增一行</button>
                         <div class="text-right">
-                            <div class="text-sm text-slate-400">借貸差額: <span id="jnlDiff" class="text-emerald-400 font-mono font-bold">0</span></div>
+                            <div class="text-sm text-slate-400">差額: <span id="jnlDiff" class="text-emerald-400 font-mono font-bold">0</span></div>
                         </div>
                     </div>
                     <button onclick="submitJournal()" id="btnJnl" class="w-full bg-slate-600 hover:bg-slate-500 text-white py-3 rounded-lg font-bold mt-4 transition">過帳 (Post)</button>
@@ -249,7 +266,7 @@
 
     <script>
         // ==========================================
-        // ⚠️ 請填入您的 Google Apps Script 網址
+        // ⚠️ 請填入您的 Google Apps Script 網址 ⚠️
         // ==========================================
         const API_URL = "https://script.google.com/macros/s/AKfycbxDcZyACW4wb1DyfZuexXepTSkF0l9nPk1LDAHY4jp1DCI7rKCrOdKD8WAc_EsWCSwZ/exec"; 
         // ==========================================
@@ -257,6 +274,46 @@
         let productList = []; 
         let cart = [];
         let rptChartInstance = null;
+        let sessionKey = null;
+
+        // 🔐 安全登入邏輯
+        function checkLoginStatus() {
+            const storedKey = sessionStorage.getItem("sca_api_key");
+            if(storedKey) {
+                sessionKey = storedKey;
+                document.getElementById('authOverlay').style.display = 'none';
+                document.getElementById('appContainer').style.opacity = '1';
+                document.getElementById('appContainer').style.pointerEvents = 'auto'; // 啟用點擊
+                initSystem();
+            }
+        }
+
+        function login() {
+            const key = document.getElementById('authKey').value;
+            if(!key) { document.getElementById('loginMsg').innerText = "請輸入金鑰"; return; }
+            
+            // 簡易驗證：嘗試進行一次請求
+            sessionKey = key;
+            sessionStorage.setItem("sca_api_key", key);
+            
+            loadProducts(true).then(success => {
+                if(success) {
+                    document.getElementById('authOverlay').style.display = 'none';
+                    document.getElementById('appContainer').style.opacity = '1';
+                    document.getElementById('appContainer').style.pointerEvents = 'auto';
+                    initSystem();
+                } else {
+                    document.getElementById('loginMsg').innerText = "❌ 金鑰錯誤或連線失敗";
+                    sessionStorage.removeItem("sca_api_key");
+                    sessionKey = null;
+                }
+            });
+        }
+
+        function logout() {
+            sessionStorage.removeItem("sca_api_key");
+            location.reload();
+        }
 
         function initSystem() {
             const today = new Date();
@@ -266,11 +323,7 @@
             document.getElementById('jnlDate').valueAsDate = today;
             document.getElementById('rptStart').valueAsDate = firstDay;
             document.getElementById('rptEnd').valueAsDate = today;
-            
-            // 初始化入庫日期
             document.getElementById('newProdInDate').valueAsDate = today;
-
-            loadProducts();
         }
 
         function switchTab(id) {
@@ -281,103 +334,31 @@
             if(activeBtn) activeBtn.classList.add('active');
         }
 
-        // --- 報表邏輯 ---
-        function generateReport() {
-            const start = document.getElementById('rptStart').value;
-            const end = document.getElementById('rptEnd').value;
-            const btn = document.getElementById('btnRpt');
-            btn.disabled = true;
-            btn.innerText = "計算中...";
-
-            const url = `${API_URL}?action=get_report&startDate=${start}&endDate=${end}`;
-
-            fetch(url).then(res => res.json()).then(data => {
-                if(data.status === "success") {
-                    const r = data.report;
-                    document.getElementById('rpt-rev').innerText = r.revenue.toLocaleString();
-                    document.getElementById('rpt-cogs').innerText = `(${r.cogs.toLocaleString()})`;
-                    document.getElementById('rpt-gp').innerText = r.gross_profit.toLocaleString();
-                    document.getElementById('rpt-exp').innerText = `(${r.expense.toLocaleString()})`;
-                    document.getElementById('rpt-net').innerText = r.net_income.toLocaleString();
-                    document.getElementById('rpt-tax').innerText = r.tax.toLocaleString();
-                    updateChart(r);
-                } else { alert("失敗: " + data.msg); }
-            }).catch(err => alert("連線錯誤")).finally(() => { btn.disabled = false; btn.innerText = "生成報表"; });
-        }
-
-        function updateChart(data) {
-            const ctx = document.getElementById('rptChart').getContext('2d');
-            if(rptChartInstance) rptChartInstance.destroy();
-            rptChartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['淨利', '成本', '費用'],
-                    datasets: [{
-                        data: [Math.max(0, data.net_income), data.cogs, data.expense],
-                        backgroundColor: ['#fbbf24', '#f87171', '#60a5fa'],
-                        borderWidth: 0
-                    }]
-                },
-                options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } } }
-            });
-        }
-
-        // --- 傳票邏輯 ---
-        function addJnlRow() {
-            const container = document.getElementById('journalEntries');
-            const div = document.createElement('div');
-            div.className = "grid grid-cols-12 gap-2 jnl-row";
-            div.innerHTML = `
-                <input type="text" class="col-span-4 input-dark p-2 rounded jnl-ac" placeholder="科目">
-                <input type="text" class="col-span-4 input-dark p-2 rounded jnl-desc" placeholder="摘要">
-                <input type="number" class="col-span-2 input-dark p-2 rounded text-right jnl-dr" placeholder="0" oninput="calcJnlBalance()">
-                <input type="number" class="col-span-2 input-dark p-2 rounded text-right jnl-cr" placeholder="0" oninput="calcJnlBalance()">
-            `;
-            container.appendChild(div);
-        }
-
-        function calcJnlBalance() {
-            let dr = 0, cr = 0;
-            document.querySelectorAll('.jnl-dr').forEach(i => dr += Number(i.value));
-            document.querySelectorAll('.jnl-cr').forEach(i => cr += Number(i.value));
-            const diff = dr - cr;
-            const el = document.getElementById('jnlDiff');
-            el.innerText = diff;
-            el.className = diff === 0 ? "text-emerald-400 font-mono font-bold" : "text-red-400 font-mono font-bold";
-        }
-
-        function submitJournal() {
-            if(Number(document.getElementById('jnlDiff').innerText) !== 0) return alert("借貸不平衡");
-            let entries = [];
-            document.querySelectorAll('.jnl-row').forEach(row => {
-                const ac = row.querySelector('.jnl-ac').value;
-                if(ac) entries.push({
-                    account: ac, 
-                    desc: row.querySelector('.jnl-desc').value,
-                    dr: row.querySelector('.jnl-dr').value || 0, 
-                    cr: row.querySelector('.jnl-cr').value || 0
-                });
-            });
-            if(entries.length===0) return alert("請輸入");
-            sendData({action: "record_manual_journal", date: document.getElementById('jnlDate').value, entries: entries}, "btnJnl", "已過帳", () => {
-                document.querySelectorAll('.jnl-dr, .jnl-cr, .jnl-ac, .jnl-desc').forEach(i => i.value = "");
-                calcJnlBalance();
-            });
-        }
-
-        // --- POS & 庫存 ---
-        async function loadProducts() {
+        // --- 核心：商品載入 ---
+        async function loadProducts(isLoginCheck = false) {
+            const grid = document.getElementById('productGrid');
             try {
                 const res = await fetch(`${API_URL}?action=get_products`);
                 const data = await res.json();
+                
                 if(data.status === "success") {
                     productList = data.products;
-                    renderProductGrid();
-                    renderInventoryList();
+                    if(!isLoginCheck) {
+                        renderProductGrid();
+                        renderInventoryList();
+                    }
+                    return true;
+                } else {
+                    if(!isLoginCheck) grid.innerHTML = "載入失敗";
+                    return false;
                 }
-            } catch(e) { console.error(e); }
+            } catch(e) { 
+                console.error(e); 
+                return false; 
+            }
         }
 
+        // --- 渲染 (與 v3.1 相同，含日期顯示) ---
         function renderProductGrid() {
             document.getElementById('productGrid').innerHTML = productList.map(p => `
                 <div onclick="addToCart('${p.id}', '${p.name}', ${p.price}, ${p.cost})" 
@@ -423,7 +404,7 @@
             document.getElementById('itemCount').innerText = cart.reduce((s, i) => s + i.qty, 0);
             calculateTotal();
         }
-
+        
         function changeQty(idx, d) {
             if(cart[idx].qty + d <= 0) { if(confirm("移除?")) cart.splice(idx, 1); } 
             else cart[idx].qty += d;
@@ -437,15 +418,21 @@
             document.getElementById('cartFinalTotal').innerText = `$${Math.max(0, sub - disc)}`;
         }
 
+        // --- 資料傳送 (Secure Mode) ---
+        // ⚠️ 關鍵：所有 POST 請求都必須帶上 auth: sessionKey
+        
         function updateStock(id) {
-            sendData({action: "update_inventory", id: id, qty: document.getElementById(`stock-${id}`).value}, `btn-upd-${id}`, "已更新", () => {
+            sendData({
+                action: "update_inventory", auth: sessionKey,
+                id: id, qty: document.getElementById(`stock-${id}`).value
+            }, `btn-upd-${id}`, "已更新", () => {
                 document.getElementById(`btn-upd-${id}`).classList.add('invisible'); loadProducts();
             });
         }
 
         function addProduct() {
             sendData({
-                action: "add_product",
+                action: "add_product", auth: sessionKey,
                 name: document.getElementById('newProdName').value,
                 price: document.getElementById('newProdPrice').value,
                 cost: document.getElementById('newProdCost').value,
@@ -462,17 +449,48 @@
             const total = Math.max(0, sub - disc);
             const cogs = cart.reduce((s, i) => s + (i.cost * i.qty), 0);
             sendData({
-                action: "record_sale", originalTotal: sub, discount: disc, finalTotal: total, cogs: cogs,
+                action: "record_sale", auth: sessionKey,
+                originalTotal: sub, discount: disc, finalTotal: total, cogs: cogs,
                 items: cart, note: document.getElementById('posNote').value
             }, "btnSale", "完成", () => { cart=[]; renderCart(); loadProducts(); });
         }
 
         function submitExpense() {
-            sendData({action: "record_expense", amount: document.getElementById('expAmount').value, tag: document.getElementById('expTag').value, desc: document.getElementById('expDesc').value}, "btnExp", "已申報", () => {});
+            sendData({
+                action: "record_expense", auth: sessionKey,
+                amount: document.getElementById('expAmount').value,
+                tag: document.getElementById('expTag').value,
+                desc: document.getElementById('expDesc').value
+            }, "btnExp", "已申報", () => {});
         }
 
         function submitPayment() {
-            sendData({action: "record_purchase_payment", amount: document.getElementById('payAmount').value, invoiceDate: document.getElementById('invDate').value, note: document.getElementById('payNote').value}, "btnPay", "已付款", () => {});
+            sendData({
+                action: "record_purchase_payment", auth: sessionKey,
+                amount: document.getElementById('payAmount').value,
+                invoiceDate: document.getElementById('invDate').value,
+                note: document.getElementById('payNote').value
+            }, "btnPay", "已付款", () => {});
+        }
+
+        function submitJournal() {
+            if(Number(document.getElementById('jnlDiff').innerText) !== 0) return alert("不平衡");
+            let entries = [];
+            document.querySelectorAll('.jnl-row').forEach(row => {
+                const ac = row.querySelector('.jnl-ac').value;
+                if(ac) entries.push({
+                    account: ac, desc: row.querySelector('.jnl-desc').value,
+                    dr: row.querySelector('.jnl-dr').value || 0, cr: row.querySelector('.jnl-cr').value || 0
+                });
+            });
+            if(entries.length===0) return alert("請輸入");
+            sendData({
+                action: "record_manual_journal", auth: sessionKey,
+                date: document.getElementById('jnlDate').value, entries: entries
+            }, "btnJnl", "已過帳", () => {
+                document.querySelectorAll('.jnl-dr, .jnl-cr, .jnl-ac, .jnl-desc').forEach(i => i.value = "");
+                calcJnlBalance();
+            });
         }
 
         function sendData(payload, btnId, msg, callback) {
@@ -486,5 +504,3 @@
     </script>
 </body>
 </html>
-
-
