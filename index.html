@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SCA ERP Pro v4.2 (Secure & Fixed)</title>
+    <title>SCA ERP Pro v4.4 (Tea Edition)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -16,25 +16,38 @@
         .input-dark { background: rgba(15, 23, 42, 0.6); border: 1px solid #334155; color: white; transition: all 0.2s; }
         .input-dark:focus { border-color: #10b981; outline: none; }
         .nav-btn.active { background-color: #1e293b; color: #34d399; border-right: 3px solid #34d399; }
-        .report-table th, .report-table td { padding: 12px; border-bottom: 1px solid #334155; }
-        .report-table th { text-align: left; color: #94a3b8; font-size: 0.85rem; }
-        .report-value { font-family: 'Courier New', monospace; text-align: right; }
         
         #authOverlay { position: fixed; inset: 0; background: #020617; z-index: 50; display: flex; align-items: center; justify-content: center; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     </style>
 </head>
 <body onload="checkLoginStatus()">
 
     <!-- 🔐 安全登入層 -->
     <div id="authOverlay">
-        <div class="glass-panel p-8 rounded-2xl w-full max-w-md text-center border-t-4 border-emerald-500">
-            <h1 class="text-3xl font-bold text-white mb-2"><i class="fa-solid fa-shield-halved text-emerald-400 mr-2"></i>SCA Secure ERP</h1>
-            <p class="text-slate-400 mb-6 text-sm">系統已加密，請輸入金鑰解鎖</p>
-            <input type="password" id="authKey" class="input-dark w-full p-4 rounded-lg text-center text-xl tracking-widest mb-4" placeholder="••••••••">
-            <button onclick="login()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold transition shadow-lg shadow-emerald-900/30">
-                驗證並登入 (Login)
+        <div class="glass-panel p-8 rounded-2xl w-full max-w-md text-center border-t-4 border-emerald-500 shadow-2xl shadow-emerald-900/20">
+            <h1 class="text-3xl font-bold text-white mb-2"><i class="fa-solid fa-leaf text-emerald-400 mr-2"></i>茶葉展售系統</h1>
+            <p class="text-slate-400 mb-6 text-sm">SCA Secure ERP v4.4</p>
+            
+            <div class="relative mb-4">
+                <input type="password" id="authKey" class="input-dark w-full p-4 rounded-lg text-center text-xl tracking-widest" placeholder="請輸入金鑰">
+                <div class="absolute right-4 top-4 text-slate-500 cursor-pointer" onclick="togglePassword()">
+                    <i class="fa-solid fa-eye" id="eyeIcon"></i>
+                </div>
+            </div>
+
+            <button onclick="login()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold transition shadow-lg shadow-emerald-900/30 flex justify-center items-center gap-2">
+                <i class="fa-solid fa-unlock-keyhole"></i> 驗證並登入
             </button>
-            <p id="loginMsg" class="text-red-400 text-sm mt-4 min-h-[20px]"></p>
+            
+            <p id="loginMsg" class="text-red-400 text-sm mt-4 min-h-[20px] font-bold"></p>
+            
+            <div class="mt-6 text-xs text-slate-600 border-t border-slate-700 pt-4 text-left px-4">
+                <p class="mb-1"><i class="fa-solid fa-circle text-emerald-500 text-[8px] mr-1"></i> 連線金鑰：<span class="text-emerald-400 font-mono">0926</span> (同步後端)</p>
+                <p><i class="fa-solid fa-circle text-amber-500 text-[8px] mr-1"></i> 離線測試：<span class="text-amber-400 font-mono">8888</span> (僅本機)</p>
+            </div>
         </div>
     </div>
 
@@ -42,89 +55,101 @@
     <div id="appContainer" class="flex h-screen overflow-hidden opacity-0 transition-opacity duration-500 pointer-events-none">
         
         <!-- Sidebar -->
-        <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 z-20">
+        <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 z-20 hidden md:flex" id="sidebar">
             <div class="p-6 border-b border-slate-800">
                 <h1 class="text-xl font-bold text-emerald-400 flex items-center gap-2">
-                    <i class="fa-solid fa-lock text-xs"></i> SCA ERP Pro
+                    <i class="fa-solid fa-server text-xs"></i> SCA ERP
                 </h1>
-                <p class="text-xs text-slate-500 mt-1 pl-1">Secure Suite v4.2</p>
+                <p class="text-xs text-slate-500 mt-1 pl-1">Backend Integrated</p>
+                <div id="connectionStatus" class="mt-2 text-xs flex items-center gap-1 text-slate-600">
+                    <span class="w-2 h-2 rounded-full bg-gray-500"></span> 檢查中...
+                </div>
             </div>
             
             <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-                <div class="text-xs font-bold text-slate-600 uppercase mb-2 px-2">Operations</div>
+                <div class="text-xs font-bold text-slate-600 uppercase mb-2 px-2">Front Office</div>
                 <button onclick="switchTab('pos')" id="nav-pos" class="nav-btn active w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 transition flex items-center gap-3">
-                    <i class="fa-solid fa-cash-register w-5 text-center"></i> POS 結帳
+                    <i class="fa-solid fa-cash-register w-5 text-center"></i> 展售收銀台
                 </button>
                 <button onclick="switchTab('inventory')" id="nav-inventory" class="nav-btn w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 transition flex items-center gap-3">
-                    <i class="fa-solid fa-boxes-stacked w-5 text-center"></i> 庫存管理
+                    <i class="fa-solid fa-boxes-stacked w-5 text-center"></i> 庫存盤點
                 </button>
                 
-                <div class="text-xs font-bold text-slate-600 uppercase mb-2 px-2 mt-4">Finance</div>
+                <div class="text-xs font-bold text-slate-600 uppercase mb-2 px-2 mt-4">Back Office</div>
                 <button onclick="switchTab('expense')" id="nav-expense" class="nav-btn w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 transition flex items-center gap-3">
                     <i class="fa-solid fa-receipt w-5 text-center"></i> 費用報支
                 </button>
-                <button onclick="switchTab('purchase')" id="nav-purchase" class="nav-btn w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 transition flex items-center gap-3">
-                    <i class="fa-solid fa-file-invoice-dollar w-5 text-center"></i> 採購付款
-                </button>
-                <button onclick="switchTab('journal')" id="nav-journal" class="nav-btn w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 transition flex items-center gap-3">
-                    <i class="fa-solid fa-pen-to-square w-5 text-center"></i> 會計傳票
-                </button>
-                
-                <div class="text-xs font-bold text-slate-600 uppercase mb-2 px-2 mt-4">Analysis</div>
                 <button onclick="switchTab('report')" id="nav-report" class="nav-btn w-full text-left p-3 rounded hover:bg-slate-800 text-slate-400 transition flex items-center gap-3">
-                    <i class="fa-solid fa-file-contract w-5 text-center"></i> 財務總表
+                    <i class="fa-solid fa-chart-pie w-5 text-center"></i> 財務報表
                 </button>
             </nav>
             
             <div class="p-4 border-t border-slate-800">
                 <button onclick="logout()" class="w-full text-xs text-red-400 hover:text-red-300 text-center py-2 border border-red-900/50 rounded hover:bg-red-900/20 transition">
-                    <i class="fa-solid fa-right-from-bracket mr-1"></i> 安全登出
+                    <i class="fa-solid fa-power-off mr-1"></i> 安全登出
                 </button>
             </div>
         </aside>
 
         <!-- Main Content -->
-        <main class="flex-1 overflow-y-auto p-4 md:p-8 relative bg-gradient-to-br from-slate-900 to-slate-800">
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 relative bg-gradient-to-br from-slate-900 to-slate-800 w-full">
             
+            <!-- Mobile Toggle -->
+            <button onclick="document.getElementById('sidebar').classList.toggle('hidden');" class="md:hidden absolute top-4 right-4 text-white z-50 bg-slate-800 p-2 rounded">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+
             <!-- Tab 1: POS -->
             <div id="pos" class="tab-content active max-w-7xl mx-auto h-full flex flex-col">
                 <div class="flex justify-between items-center mb-6">
                     <div>
-                        <h2 class="text-2xl font-bold text-white">零售結帳台</h2>
-                        <p class="text-xs text-slate-400 mt-1"><i class="fa-solid fa-shield-cat text-emerald-500"></i> 資料加密傳輸 (v4.2)</p>
+                        <h2 class="text-2xl font-bold text-white">展售會收銀台</h2>
+                        <p class="text-xs text-slate-400 mt-1"><i class="fa-solid fa-tag text-emerald-500"></i> 促銷中：任選兩入 85 折 (茶包建議排除)</p>
                     </div>
-                    <button onclick="loadProducts()" class="text-sm bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded text-white transition flex items-center gap-2">
-                        <i class="fa-solid fa-sync"></i> 同步商品
-                    </button>
+                    <div class="flex gap-2">
+                        <button onclick="loadProducts()" class="text-sm bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded text-white transition">
+                            <i class="fa-solid fa-rotate"></i> 同步後端
+                        </button>
+                    </div>
                 </div>
                 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-10rem)]">
                     <div class="lg:col-span-2 overflow-y-auto pr-2 pb-10">
-                        <div id="productGrid" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                            <div class="col-span-full text-center py-20 text-slate-500">
-                                <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3"></i><br>等待授權中...
-                            </div>
-                        </div>
+                        <div id="productGrid" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4"></div>
                     </div>
                     
-                    <div class="glass-panel p-0 rounded-xl flex flex-col h-[calc(100vh-8rem)]">
+                    <div class="glass-panel p-0 rounded-xl flex flex-col h-full lg:h-auto overflow-hidden">
                         <div class="p-4 border-b border-slate-700 bg-slate-900/50 flex justify-between items-center">
-                            <h3 class="font-bold text-white">購物車</h3>
-                            <span class="text-xs bg-emerald-600 text-white px-2 py-1 rounded-full" id="itemCount">0</span>
+                            <h3 class="font-bold text-white"><i class="fa-solid fa-cart-shopping mr-2"></i>當前訂單</h3>
+                            <button onclick="clearCart()" class="text-xs text-red-400 hover:text-red-300">清空</button>
                         </div>
-                        <div id="cartItems" class="flex-1 space-y-2 overflow-y-auto p-4"></div>
-                        <div class="bg-slate-900/80 p-5 space-y-3 border-t border-slate-700 backdrop-blur-md">
-                            <div class="flex justify-between text-sm text-slate-400"><span>小計</span><span id="cartSubtotal">$0</span></div>
-                            <div class="flex items-center justify-between gap-2 bg-slate-800 p-2 rounded border border-slate-700">
-                                <label class="text-xs text-yellow-500 font-bold whitespace-nowrap">折扣</label>
-                                <input type="number" id="manualDiscount" oninput="calculateTotal()" class="bg-transparent text-right text-yellow-400 text-sm outline-none w-24 placeholder-slate-600" placeholder="0">
+                        
+                        <div id="cartItems" class="flex-1 space-y-2 overflow-y-auto p-4">
+                            <div class="text-center text-slate-600 mt-10 text-sm">尚未加入商品</div>
+                        </div>
+
+                        <div class="bg-slate-900/90 p-5 space-y-3 border-t border-slate-700 backdrop-blur-md">
+                            <div class="flex justify-between text-sm text-slate-400">
+                                <span>原價小計</span>
+                                <span id="cartSubtotal">$0</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-emerald-900/20 p-2 rounded border border-emerald-900/50 hidden" id="discountRow">
+                                <span class="text-xs text-emerald-400 font-bold"><i class="fa-solid fa-gift mr-1"></i>任兩件85折</span>
+                                <span class="text-emerald-400 text-sm" id="discountAmount">-$0</span>
                             </div>
                             <div class="flex justify-between text-2xl font-bold text-white border-t border-slate-700 pt-3">
-                                <span>總計 (含稅)</span>
+                                <span>實收金額</span>
                                 <span id="cartFinalTotal" class="text-emerald-400">$0</span>
                             </div>
-                            <input type="text" id="posNote" class="input-dark w-full p-2 rounded text-sm" placeholder="📝 訂單備註 (個資將加密)">
-                            <button onclick="submitSale()" id="btnSale" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold transition">結帳收款</button>
+                            
+                            <div id="profitWarning" class="hidden text-xs text-red-400 bg-red-900/20 p-1 rounded text-center">
+                                <i class="fa-solid fa-triangle-exclamation"></i> 注意：本單預估虧損 (茶包成本過高)
+                            </div>
+
+                            <input type="text" id="posNote" class="input-dark w-full p-2 rounded text-sm mt-2" placeholder="📝 訂單備註 (選填)">
+                            <button onclick="submitSale()" id="btnSale" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold transition shadow-lg mt-2">
+                                結帳收款 (寫入後端)
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -134,129 +159,54 @@
             <div id="inventory" class="tab-content max-w-6xl mx-auto">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-cyan-400">庫存管理</h2>
-                    <button onclick="loadProducts()" class="text-sm bg-slate-800 px-3 py-1 rounded text-slate-400 hover:text-white transition"><i class="fa-solid fa-sync"></i> Refresh</button>
+                    <span class="text-slate-500 text-sm">即時庫存監控 (資料來源：Google Sheets)</span>
                 </div>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div class="glass-panel p-6 rounded-xl border-t-4 border-cyan-500">
-                        <h3 class="text-lg font-bold text-white mb-6">上架新商品</h3>
-                        <div class="space-y-4">
-                            <input type="text" id="newProdName" class="input-dark w-full p-3 rounded" placeholder="品名">
-                            <div class="grid grid-cols-2 gap-4">
-                                <input type="number" id="newProdPrice" class="input-dark w-full p-3 rounded" placeholder="定價">
-                                <input type="number" id="newProdCost" class="input-dark w-full p-3 rounded" placeholder="成本">
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs text-slate-400 mb-1">入庫日期</label>
-                                    <input type="date" id="newProdInDate" class="input-dark w-full p-2 rounded text-sm text-gray-300">
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-red-300 mb-1">有效期限</label>
-                                    <input type="date" id="newProdExpDate" class="input-dark w-full p-2 rounded text-sm text-gray-300">
-                                </div>
-                            </div>
-                            <input type="number" id="newProdQty" class="input-dark w-full p-3 rounded" placeholder="初始庫存">
-                            <button onclick="addProduct()" id="btnAddProd" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-2 rounded font-bold mt-2">上架</button>
-                        </div>
-                    </div>
-                    <div class="lg:col-span-2 glass-panel p-0 rounded-xl border-t-4 border-emerald-500 flex flex-col overflow-hidden">
-                        <table class="w-full text-left">
-                            <thead class="text-xs text-slate-400 uppercase bg-slate-900/50"><tr><th class="p-4">品名</th><th class="p-4">庫存</th><th class="p-4">操作</th></tr></thead>
-                            <tbody id="inventoryList" class="text-sm divide-y divide-slate-700"></tbody>
-                        </table>
-                    </div>
+                <div class="glass-panel p-0 rounded-xl border-t-4 border-cyan-500 overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="text-xs text-slate-400 uppercase bg-slate-900/50"><tr><th class="p-4">品名</th><th class="p-4">成本</th><th class="p-4">售價</th><th class="p-4">當前庫存</th></tr></thead>
+                        <tbody id="inventoryList" class="text-sm divide-y divide-slate-700"></tbody>
+                    </table>
                 </div>
             </div>
 
-            <!-- Tab 3 & 4: Expense & Purchase -->
+            <!-- Tab 3: Expense -->
             <div id="expense" class="tab-content max-w-2xl mx-auto">
                 <h2 class="text-2xl font-bold mb-6 text-blue-400">費用報支</h2>
                 <div class="glass-panel p-8 rounded-xl border-t-4 border-blue-500 space-y-4">
-                    <input type="number" id="expAmount" class="input-dark w-full p-3 rounded" placeholder="金額">
-                    <select id="expTag" class="input-dark w-full p-3 rounded"><option value="staff">伙食費</option><option value="client">交際費</option><option value="meeting">會議費</option><option value="travel">旅費</option></select>
-                    <input type="text" id="expDesc" class="input-dark w-full p-3 rounded" placeholder="摘要 (個資將加密)">
-                    <button onclick="submitExpense()" id="btnExp" class="w-full bg-blue-600 text-white py-3 rounded font-bold">提交</button>
+                    <div class="grid grid-cols-2 gap-4">
+                        <input type="number" id="expAmount" class="input-dark w-full p-3 rounded" placeholder="金額 (NTD)">
+                        <select id="expTag" class="input-dark w-full p-3 rounded">
+                            <option value="staff">伙食費</option>
+                            <option value="travel">旅費</option>
+                            <option value="client">交際費</option>
+                            <option value="misc">雜支</option>
+                        </select>
+                    </div>
+                    <input type="text" id="expDesc" class="input-dark w-full p-3 rounded" placeholder="費用說明">
+                    <button onclick="submitExpense()" id="btnExp" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded font-bold transition">提交報支</button>
                 </div>
             </div>
 
-            <div id="purchase" class="tab-content max-w-2xl mx-auto">
-                <h2 class="text-2xl font-bold mb-6 text-purple-400">採購付款</h2>
-                <div class="glass-panel p-8 rounded-xl border-t-4 border-purple-500 space-y-4">
-                    <input type="number" id="payAmount" class="input-dark w-full p-3 rounded" placeholder="應付金額">
-                    <div class="grid grid-cols-2 gap-4"><input type="date" id="invDate" class="input-dark w-full p-3 rounded"><input type="date" id="payDate" class="input-dark w-full p-3 rounded"></div>
-                    <input type="text" id="payNote" class="input-dark w-full p-3 rounded" placeholder="備註 (個資將加密)">
-                    <button onclick="submitPayment()" id="btnPay" class="w-full bg-purple-600 text-white py-3 rounded font-bold">付款</button>
-                </div>
-            </div>
-
-            <!-- Tab 5: Journal -->
-            <div id="journal" class="tab-content max-w-4xl mx-auto">
-                <h2 class="text-2xl font-bold mb-6 text-slate-300">會計傳票</h2>
-                <div class="glass-panel p-8 rounded-xl border-t-4 border-slate-500">
-                    <div class="flex justify-between items-center mb-4">
-                        <input type="date" id="jnlDate" class="input-dark p-2 rounded">
-                        <span class="text-xs text-slate-400">借貸需平衡</span>
-                    </div>
-                    <div id="journalEntries" class="space-y-2 mb-4">
-                        <div class="grid grid-cols-12 gap-2 text-xs uppercase text-slate-500 mb-1">
-                            <div class="col-span-4">科目</div>
-                            <div class="col-span-4">摘要</div>
-                            <div class="col-span-2 text-right">借 (Dr)</div>
-                            <div class="col-span-2 text-right">貸 (Cr)</div>
-                        </div>
-                        <div class="grid grid-cols-12 gap-2 jnl-row">
-                            <input type="text" class="col-span-4 input-dark p-2 rounded jnl-ac" placeholder="科目">
-                            <input type="text" class="col-span-4 input-dark p-2 rounded jnl-desc" placeholder="摘要">
-                            <input type="number" class="col-span-2 input-dark p-2 rounded text-right jnl-dr" placeholder="0" oninput="calcJnlBalance()">
-                            <input type="number" class="col-span-2 input-dark p-2 rounded text-right jnl-cr" placeholder="0" oninput="calcJnlBalance()">
-                        </div>
-                        <div class="grid grid-cols-12 gap-2 jnl-row">
-                            <input type="text" class="col-span-4 input-dark p-2 rounded jnl-ac" placeholder="科目">
-                            <input type="text" class="col-span-4 input-dark p-2 rounded jnl-desc" placeholder="摘要">
-                            <input type="number" class="col-span-2 input-dark p-2 rounded text-right jnl-dr" placeholder="0" oninput="calcJnlBalance()">
-                            <input type="number" class="col-span-2 input-dark p-2 rounded text-right jnl-cr" placeholder="0" oninput="calcJnlBalance()">
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center border-t border-slate-700 pt-4">
-                        <button onclick="addJnlRow()" class="text-sm text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-plus"></i> 新增一行</button>
-                        <div class="text-right">
-                            <div class="text-sm text-slate-400">差額: <span id="jnlDiff" class="text-emerald-400 font-mono font-bold">0</span></div>
-                        </div>
-                    </div>
-                    <button onclick="submitJournal()" id="btnJnl" class="w-full bg-slate-600 hover:bg-slate-500 text-white py-3 rounded-lg font-bold mt-4 transition">過帳 (Post)</button>
-                </div>
-            </div>
-
-            <!-- Tab 6: Reports -->
+            <!-- Tab 4: Reports -->
             <div id="report" class="tab-content max-w-5xl mx-auto">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-amber-400">財務損益表</h2>
-                    <div class="flex gap-2">
-                        <input type="date" id="rptStart" class="input-dark p-2 rounded text-sm">
-                        <span class="text-slate-500 self-center">to</span>
-                        <input type="date" id="rptEnd" class="input-dark p-2 rounded text-sm">
-                        <button onclick="generateReport()" id="btnRpt" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded text-sm font-bold transition">生成報表</button>
+                <h2 class="text-2xl font-bold mb-6 text-amber-400">財務報表</h2>
+                <div class="flex gap-2 mb-4">
+                    <input type="date" id="rptStart" class="input-dark p-2 rounded">
+                    <input type="date" id="rptEnd" class="input-dark p-2 rounded">
+                    <button onclick="getReport()" class="bg-amber-600 px-4 rounded text-white font-bold">查詢</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="glass-panel p-6 rounded-xl">
+                        <h3 class="text-slate-400 text-sm mb-2">區間銷貨收入</h3>
+                        <div class="text-4xl font-bold text-emerald-400" id="rpt-revenue">$0</div>
+                    </div>
+                    <div class="glass-panel p-6 rounded-xl">
+                        <h3 class="text-slate-400 text-sm mb-2">區間淨利 (Net Income)</h3>
+                        <div class="text-4xl font-bold text-amber-400" id="rpt-net">$0</div>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="md:col-span-2 glass-panel p-0 rounded-xl border-t-4 border-amber-500 overflow-hidden">
-                        <div class="p-4 bg-slate-900/50 border-b border-slate-700 font-bold">Income Statement (NTD)</div>
-                        <table class="w-full text-sm report-table">
-                            <tbody>
-                                <tr><td>銷貨收入 (Revenue)</td><td id="rpt-rev" class="report-value text-emerald-400">0</td></tr>
-                                <tr><td>銷貨成本 (COGS)</td><td id="rpt-cogs" class="report-value text-red-400">0</td></tr>
-                                <tr class="bg-slate-800/50 font-bold"><td>銷貨毛利 (Gross Profit)</td><td id="rpt-gp" class="report-value text-slate-200">0</td></tr>
-                                <tr><td>營業費用 (Expenses)</td><td id="rpt-exp" class="report-value text-red-300">0</td></tr>
-                                <tr class="bg-slate-800/50 font-bold text-lg border-t-2 border-slate-600"><td>本期淨利 (Net Income)</td><td id="rpt-net" class="report-value text-amber-400">0</td></tr>
-                            </tbody>
-                        </table>
-                        <div class="p-4 text-xs text-slate-500 border-t border-slate-700">
-                            * 註：銷項稅額 (Liability) 累計: <span id="rpt-tax" class="text-slate-300 font-mono">0</span>
-                        </div>
-                    </div>
-                    <div class="glass-panel p-4 rounded-xl">
-                        <canvas id="rptChart"></canvas>
-                    </div>
+                <div class="glass-panel p-6 rounded-xl mt-6">
+                   <div class="text-xs text-slate-500">* 報表數據由後端即時運算產生 (含稅額分離)</div>
                 </div>
             </div>
 
@@ -265,62 +215,103 @@
 
     <script>
         // ==========================================
-        // ⚠️ 請務必在此填入您的 Google Apps Script 網址 ⚠️
+        // ⚠️【關鍵設定】請在此貼上您的 Google Web App URL ⚠️
         // ==========================================
-        const API_URL = "https://script.google.com/macros/s/AKfycbxDcZyACW4wb1DyfZuexXepTSkF0l9nPk1LDAHY4jp1DCI7rKCrOdKD8WAc_EsWCSwZ/exec"; 
-        // ==========================================
+        const API_URL = "在此處貼上您的_Google_Script_Web_App_Url"; 
         
+        // 金鑰設定
+        const OFFLINE_KEY = "8888";  // 離線測試用
+        const BACKEND_KEY = "0926";  // 您後端設定的 API_SECRET
+
+        // 本地預設資料 (離線模式用)
+        const LOCAL_PRODUCTS = [
+            { id: "TEA001", name: "特選紅烏龍", price: 450, cost: 160, qty: 14, tag: "熱銷" },
+            { id: "TEA002", name: "凍頂烏龍", price: 350, cost: 160, qty: 4 },
+            { id: "TEA003", name: "蜜香紅茶", price: 300, cost: 160, qty: 20 },
+            { id: "TEA004", name: "坪林包種", price: 250, cost: 160, qty: 32 },
+            { id: "TEA005", name: "茶包 (10入)", price: 90, cost: 160, qty: 40, isLossLeader: true }
+        ];
+
         let productList = []; 
         let cart = [];
-        let rptChartInstance = null;
         let sessionKey = null;
+        let isOfflineMode = false;
 
-        // 🔐 安全登入邏輯
         function checkLoginStatus() {
+            if(API_URL.includes("在此處貼上")) {
+                alert("⚠️ 請注意：您尚未設定 Google Script 網址！\n請編輯 HTML 第 193 行，填入部署後的網址。");
+            }
             const storedKey = sessionStorage.getItem("sca_api_key");
-            if(storedKey) {
-                sessionKey = storedKey;
-                
-                // 檢查是否已設定 URL
-                if(API_URL.includes("您的_SCRIPT_ID")) {
-                    alert("⚠️ 請注意：\n您尚未設定後端網址 (API_URL)！\n請開啟 HTML 檔案，修改第 485 行的網址。");
-                    return;
-                }
-
-                document.getElementById('authOverlay').style.display = 'none';
-                document.getElementById('appContainer').style.opacity = '1';
-                document.getElementById('appContainer').style.pointerEvents = 'auto'; 
-                initSystem();
+            if (storedKey) {
+                document.getElementById('authKey').value = storedKey;
+                login();
             }
         }
 
-        function login() {
-            // 檢查 URL 設定
-            if(API_URL.includes("您的_SCRIPT_ID")) {
-                alert("⚠️ 請先設定程式碼中的 API_URL！");
-                return;
-            }
+        function togglePassword() {
+            const input = document.getElementById('authKey');
+            input.type = input.type === "password" ? "text" : "password";
+        }
 
+        async function login() {
             const key = document.getElementById('authKey').value;
-            if(!key) { document.getElementById('loginMsg').innerText = "請輸入金鑰"; return; }
+            if (!key) return;
             
-            // 簡易驗證：嘗試進行一次請求
-            sessionKey = key;
-            sessionStorage.setItem("sca_api_key", key);
+            document.getElementById('loginMsg').innerText = "連線驗證中...";
             
-            // 使用 key 嘗試載入資料，驗證 key 是否正確
-            loadProducts(true).then(success => {
-                if(success) {
-                    document.getElementById('authOverlay').style.display = 'none';
-                    document.getElementById('appContainer').style.opacity = '1';
-                    document.getElementById('appContainer').style.pointerEvents = 'auto';
-                    initSystem();
-                } else {
-                    document.getElementById('loginMsg').innerText = "❌ 金鑰錯誤或連線失敗";
-                    sessionStorage.removeItem("sca_api_key");
-                    sessionKey = null;
+            // 模式判斷
+            if (key === OFFLINE_KEY) {
+                activateOfflineMode();
+            } else if (key === BACKEND_KEY) {
+                try {
+                    // 嘗試連線後端
+                    const res = await fetch(`${API_URL}?action=get_products&auth=${key}`);
+                    const data = await res.json();
+                    
+                    if (data.status === "error" && data.msg === "Unauthorized") {
+                        document.getElementById('loginMsg').innerText = "❌ 密碼錯誤 (後端拒絕)";
+                        return;
+                    }
+
+                    sessionKey = key;
+                    sessionStorage.setItem("sca_api_key", key);
+                    isOfflineMode = false;
+                    enterSystem("Online");
+                    
+                    if(data.products) {
+                        productList = data.products;
+                        renderProductGrid();
+                        renderInventoryList();
+                    }
+                } catch (e) {
+                    if(confirm("無法連線至後端 (請確認 URL 是否正確)。\n是否切換為離線模式？")) {
+                        activateOfflineMode();
+                    } else {
+                        document.getElementById('loginMsg').innerText = "❌ 連線失敗";
+                    }
                 }
-            });
+            } else {
+                document.getElementById('loginMsg').innerText = "❌ 金鑰無效 (請輸入 0926 或 8888)";
+            }
+        }
+
+        function activateOfflineMode() {
+            sessionKey = OFFLINE_KEY;
+            isOfflineMode = true;
+            productList = [...LOCAL_PRODUCTS];
+            enterSystem("Offline");
+            renderProductGrid();
+            renderInventoryList();
+        }
+
+        function enterSystem(mode) {
+            document.getElementById('authOverlay').style.display = 'none';
+            document.getElementById('appContainer').style.opacity = '1';
+            document.getElementById('appContainer').style.pointerEvents = 'auto';
+            const statusEl = document.getElementById('connectionStatus');
+            statusEl.innerHTML = mode === "Offline" 
+                ? `<span class="w-2 h-2 rounded-full bg-amber-500"></span> 離線模式` 
+                : `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> 已連線至後端`;
         }
 
         function logout() {
@@ -328,220 +319,197 @@
             location.reload();
         }
 
-        function initSystem() {
-            const today = new Date();
-            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-            
-            document.getElementById('payDate').valueAsDate = today;
-            document.getElementById('jnlDate').valueAsDate = today;
-            document.getElementById('rptStart').valueAsDate = firstDay;
-            document.getElementById('rptEnd').valueAsDate = today;
-            document.getElementById('newProdInDate').valueAsDate = today;
+        // ==========================================
+        // 📦 業務邏輯 (POS & Cart)
+        // ==========================================
 
-            loadProducts();
-        }
-
-        function switchTab(id) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active', 'text-emerald-400', 'border-r-2', 'border-emerald-400'));
-            const activeBtn = document.getElementById('nav-' + id);
-            if(activeBtn) activeBtn.classList.add('active');
-        }
-
-        // --- 核心：商品載入 (帶 auth) ---
-        async function loadProducts(isLoginCheck = false) {
-            const grid = document.getElementById('productGrid');
+        async function loadProducts() {
+            if (isOfflineMode) {
+                productList = JSON.parse(JSON.stringify(LOCAL_PRODUCTS));
+                renderProductGrid(); renderInventoryList();
+                alert("已重置本地數據");
+                return;
+            }
             try {
-                // ✨ 修正：GET 請求也帶上 auth
                 const res = await fetch(`${API_URL}?action=get_products&auth=${sessionKey}`);
                 const data = await res.json();
-                
                 if(data.status === "success") {
                     productList = data.products;
-                    if(!isLoginCheck) {
-                        renderProductGrid();
-                        renderInventoryList();
-                    }
-                    return true;
-                } else {
-                    if(!isLoginCheck) {
-                        grid.innerHTML = `<div class="col-span-full text-red-400 text-center py-20">
-                            <i class="fa-solid fa-triangle-exclamation text-3xl mb-2"></i><br>
-                            載入失敗: ${data.msg}<br>
-                            <span class="text-xs text-slate-500">請確認後端金鑰是否為 SCA2025</span>
-                        </div>`;
-                    }
-                    return false;
+                    renderProductGrid(); renderInventoryList();
                 }
-            } catch(e) { 
-                console.error(e); 
-                if(!isLoginCheck) {
-                    grid.innerHTML = `<div class="col-span-full text-yellow-500 text-center py-20">
-                        <i class="fa-solid fa-wifi text-3xl mb-2"></i><br>
-                        無法連線至伺服器<br>
-                        <span class="text-xs text-slate-500">請檢查網路或 API_URL 設定</span>
-                    </div>`;
-                }
-                return false; 
-            }
+            } catch(e) { console.error(e); }
         }
 
-        // --- 渲染 ---
         function renderProductGrid() {
             document.getElementById('productGrid').innerHTML = productList.map(p => `
-                <div onclick="addToCart('${p.id}', '${p.name}', ${p.price}, ${p.cost})" 
-                     class="glass-panel p-4 rounded-xl cursor-pointer hover:bg-slate-700 transition active:scale-95 border-l-4 border-transparent hover:border-emerald-500 h-32 flex flex-col justify-between">
-                    <div class="text-slate-100 font-bold text-lg line-clamp-2">${p.name}</div>
-                    <div class="flex justify-between items-end">
+                <div onclick="addToCart('${p.id}')" 
+                     class="glass-panel p-4 rounded-xl cursor-pointer hover:bg-slate-700 transition active:scale-95 border-l-4 ${p.qty < 5 ? 'border-red-500' : 'border-emerald-500'} flex flex-col justify-between relative overflow-hidden group h-32">
+                    <div class="relative z-10">
+                        <div class="text-slate-100 font-bold text-lg">${p.name}</div>
+                        ${p.tag ? `<span class="text-[10px] bg-red-600 px-1.5 py-0.5 rounded text-white inline-block mb-1">${p.tag}</span>` : ''}
+                    </div>
+                    <div class="flex justify-between items-end relative z-10">
                         <div class="text-emerald-400 font-mono text-xl font-bold">$${p.price}</div>
-                        <div class="text-xs ${p.qty<5?'text-red-400 font-bold':'text-slate-400'}">庫存: ${p.qty}</div>
+                        <div class="text-xs ${p.qty<5?'text-red-400 font-bold animate-pulse':'text-slate-400'}">庫存: ${p.qty}</div>
                     </div>
                 </div>`).join('');
         }
 
         function renderInventoryList() {
-            document.getElementById('inventoryList').innerHTML = productList.map(p => {
-                const expDisplay = p.expDate ? `<div class="text-xs text-red-300 mt-1"><i class="fa-regular fa-clock mr-1"></i>Exp: ${p.expDate.split('T')[0]}</div>` : '';
-                return `<tr class="border-b border-slate-700 hover:bg-slate-800">
-                    <td class="p-4">${p.name} <span class="text-xs text-slate-500 block">${p.id}</span>${expDisplay}</td>
-                    <td class="p-4"><input type="number" id="stock-${p.id}" value="${p.qty}" class="input-dark w-20 p-1 text-center" onchange="document.getElementById('btn-upd-${p.id}').classList.remove('invisible')"></td>
-                    <td class="p-4"><button id="btn-upd-${p.id}" onclick="updateStock('${p.id}')" class="invisible bg-emerald-600 text-white px-3 py-1 rounded text-xs">更新</button></td>
-                </tr>`;
-            }).join('');
+            document.getElementById('inventoryList').innerHTML = productList.map(p => `
+                <tr class="border-b border-slate-700 hover:bg-slate-800">
+                    <td class="p-4 font-bold text-slate-200">${p.name}</td>
+                    <td class="p-4 font-mono text-slate-400">$${p.cost}</td>
+                    <td class="p-4 font-mono text-emerald-400">$${p.price}</td>
+                    <td class="p-4"><span class="bg-slate-700 px-2 py-1 rounded text-white text-xs">${p.qty}</span></td>
+                </tr>`).join('');
         }
 
-        function addToCart(id, name, price, cost) {
-            const item = cart.find(i => i.id === id);
-            if(item) item.qty++; else cart.push({id, name, price, cost, qty: 1});
+        function addToCart(id) {
+            const product = productList.find(p => p.id === id);
+            const currentInCart = cart.find(i => i.id === id)?.qty || 0;
+            if (product.qty - currentInCart <= 0) return alert("庫存不足！");
+
+            const existing = cart.find(i => i.id === id);
+            if(existing) existing.qty++; else cart.push({ ...product, qty: 1 });
             renderCart();
         }
+
+        function clearCart() { cart = []; renderCart(); }
 
         function renderCart() {
-            document.getElementById('cartItems').innerHTML = cart.map((item, idx) => `
-                <div class="flex justify-between items-center bg-slate-800 p-2 rounded mb-2 border border-slate-700">
-                    <div class="flex-1">
-                        <span class="text-sm block text-slate-200">${item.name}</span>
-                        <span class="text-xs text-slate-400">$${item.price} x ${item.qty}</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="font-mono text-emerald-400 font-bold text-sm">$${item.price * item.qty}</span>
-                        <button onclick="changeQty(${idx}, -1)" class="text-slate-400 hover:text-white bg-slate-700 px-2 py-0.5 rounded text-sm">-</button>
-                        <button onclick="changeQty(${idx}, 1)" class="text-slate-400 hover:text-white bg-slate-700 px-2 py-0.5 rounded text-sm">+</button>
-                    </div>
-                </div>`).join('');
-            document.getElementById('itemCount').innerText = cart.reduce((s, i) => s + i.qty, 0);
+            const container = document.getElementById('cartItems');
+            if (cart.length === 0) {
+                container.innerHTML = '<div class="text-center text-slate-600 mt-10 text-sm">尚未加入商品</div>';
+            } else {
+                container.innerHTML = cart.map((item, idx) => `
+                    <div class="flex justify-between items-center bg-slate-800 p-3 rounded mb-2 border border-slate-700">
+                        <div><span class="text-sm font-bold text-slate-200">${item.name}</span><span class="text-xs block text-slate-400">$${item.price} x ${item.qty}</span></div>
+                        <div class="text-emerald-400 font-bold">$${item.price * item.qty}</div>
+                    </div>`).join('');
+            }
             calculateTotal();
-        }
-        
-        function changeQty(idx, d) {
-            if(cart[idx].qty + d <= 0) { if(confirm("移除?")) cart.splice(idx, 1); } 
-            else cart[idx].qty += d;
-            renderCart();
         }
 
         function calculateTotal() {
-            const sub = cart.reduce((s, i) => s + (i.price * i.qty), 0);
-            const disc = Number(document.getElementById('manualDiscount').value) || 0;
-            document.getElementById('cartSubtotal').innerText = `$${sub}`;
-            document.getElementById('cartFinalTotal').innerText = `$${Math.max(0, sub - disc)}`;
+            const totalQty = cart.reduce((s, i) => s + i.qty, 0);
+            const subtotal = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+            const totalCost = cart.reduce((s, i) => s + (i.cost * i.qty), 0);
+            
+            let discount = (totalQty >= 2) ? Math.round(subtotal * 0.15) : 0;
+            const final = subtotal - discount;
+            const net = final - totalCost;
+
+            document.getElementById('cartSubtotal').innerText = `$${subtotal}`;
+            document.getElementById('discountAmount').innerText = `-$${discount}`;
+            document.getElementById('cartFinalTotal').innerText = `$${final}`;
+            document.getElementById('discountRow').style.display = discount > 0 ? 'flex' : 'none';
+            document.getElementById('profitWarning').style.display = net < 0 ? 'block' : 'none';
         }
 
-        // --- 資料傳送 (Secure Mode) ---
-        // ✨ 重點修正：移除 no-cors，正確讀取錯誤訊息
-        
-        function updateStock(id) {
-            sendData({
-                action: "update_inventory", auth: sessionKey,
-                id: id, qty: document.getElementById(`stock-${id}`).value
-            }, `btn-upd-${id}`, "已更新", () => {
-                document.getElementById(`btn-upd-${id}`).classList.add('invisible'); loadProducts();
-            });
-        }
+        // ==========================================
+        // 🚀 傳送資料至後端 (核心對接)
+        // ==========================================
 
-        function addProduct() {
-            sendData({
-                action: "add_product", auth: sessionKey,
-                name: document.getElementById('newProdName').value,
-                price: document.getElementById('newProdPrice').value,
-                cost: document.getElementById('newProdCost').value,
-                qty: document.getElementById('newProdQty').value,
-                inboundDate: document.getElementById('newProdInDate').value,
-                expiryDate: document.getElementById('newProdExpDate').value
-            }, "btnAddProd", "已上架", () => { loadProducts(); });
-        }
-
-        function submitSale() {
-            if(cart.length===0) return alert("空車");
-            const sub = cart.reduce((s, i) => s + (i.price * i.qty), 0);
-            const disc = Number(document.getElementById('manualDiscount').value) || 0;
-            const total = Math.max(0, sub - disc);
+        async function submitSale() {
+            if (cart.length === 0) return alert("購物車是空的");
+            const btn = document.getElementById('btnSale');
+            const note = document.getElementById('posNote').value;
+            
+            const subtotal = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+            const totalQty = cart.reduce((s, i) => s + i.qty, 0);
+            const discount = (totalQty >= 2) ? Math.round(subtotal * 0.15) : 0;
+            const finalTotal = subtotal - discount;
             const cogs = cart.reduce((s, i) => s + (i.cost * i.qty), 0);
-            sendData({
-                action: "record_sale", auth: sessionKey,
-                originalTotal: sub, discount: disc, finalTotal: total, cogs: cogs,
-                items: cart, note: document.getElementById('posNote').value
-            }, "btnSale", "完成", () => { cart=[]; renderCart(); loadProducts(); });
+
+            // 準備 payload (符合後端 handleSale 格式)
+            const payload = {
+                action: "record_sale",
+                auth: sessionKey,
+                finalTotal: finalTotal,
+                discount: discount,
+                cogs: cogs,
+                items: cart.map(i => ({ id: i.id, qty: i.qty })), // 精簡傳送
+                note: note
+            };
+
+            btn.disabled = true; btn.innerText = "處理中...";
+
+            if (isOfflineMode) {
+                setTimeout(() => {
+                    cart.forEach(i => { const p = productList.find(p=>p.id==i.id); if(p) p.qty -= i.qty; });
+                    alert("✅ (離線) 銷售已記錄");
+                    clearCart(); renderProductGrid(); renderInventoryList();
+                    btn.disabled = false; btn.innerText = "結帳收款";
+                }, 500);
+                return;
+            }
+
+            try {
+                // 使用 no-cors 避免跨域錯誤 (但無法讀取 response)，或標準 cors
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                
+                if (data.status === "success") {
+                    alert(`✅ 交易成功！\n交易單號: ${data.id}`);
+                    cart = []; renderCart(); loadProducts(); // 重新整理庫存
+                } else {
+                    alert("❌ 交易失敗: " + data.msg);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("連線錯誤，請檢查網路或後端狀態");
+            } finally {
+                btn.disabled = false; btn.innerText = "結帳收款";
+                document.getElementById('posNote').value = "";
+            }
         }
 
-        function submitExpense() {
-            sendData({
-                action: "record_expense", auth: sessionKey,
+        async function submitExpense() {
+            if(isOfflineMode) return alert("離線模式不支援寫入費用");
+            const payload = {
+                action: "record_expense",
+                auth: sessionKey,
                 amount: document.getElementById('expAmount').value,
                 tag: document.getElementById('expTag').value,
+                tagName: document.getElementById('expTag').options[document.getElementById('expTag').selectedIndex].text,
                 desc: document.getElementById('expDesc').value
-            }, "btnExp", "已申報", () => {});
-        }
-
-        function submitPayment() {
-            sendData({
-                action: "record_purchase_payment", auth: sessionKey,
-                amount: document.getElementById('payAmount').value,
-                invoiceDate: document.getElementById('invDate').value,
-                note: document.getElementById('payNote').value
-            }, "btnPay", "已付款", () => {});
-        }
-
-        function submitJournal() {
-            if(Number(document.getElementById('jnlDiff').innerText) !== 0) return alert("不平衡");
-            let entries = [];
-            document.querySelectorAll('.jnl-row').forEach(row => {
-                const ac = row.querySelector('.jnl-ac').value;
-                if(ac) entries.push({
-                    account: ac, desc: row.querySelector('.jnl-desc').value,
-                    dr: row.querySelector('.jnl-dr').value || 0, cr: row.querySelector('.jnl-cr').value || 0
+            };
+            // 簡化 fetch 呼叫...
+            fetch(API_URL, { method: "POST", body: JSON.stringify(payload) })
+                .then(r => r.json()).then(d => {
+                    if(d.status==="success") alert("✅ 報支成功");
+                    else alert("❌ 失敗: " + d.msg);
                 });
-            });
-            if(entries.length===0) return alert("請輸入");
-            sendData({
-                action: "record_manual_journal", auth: sessionKey,
-                date: document.getElementById('jnlDate').value, entries: entries
-            }, "btnJnl", "已過帳", () => {
-                document.querySelectorAll('.jnl-dr, .jnl-cr, .jnl-ac, .jnl-desc').forEach(i => i.value = "");
-                calcJnlBalance();
-            });
         }
 
-        function sendData(payload, btnId, msg, callback) {
-            const btn = document.getElementById(btnId);
-            if(btn) btn.disabled = true;
-            
-            // ✨ 移除 mode: 'no-cors'，確保能讀取錯誤訊息
-            fetch(API_URL, {method: "POST", body: JSON.stringify(payload)})
-            .then(res => res.json())
-            .then(data => {
-                if(data.status === "success") {
-                    alert(msg); 
-                    if(callback) callback();
-                } else {
-                    alert("❌ 失敗: " + data.msg);
-                }
-            })
-            .catch(e => alert("連線錯誤 (CORS/Network)"))
-            .finally(() => { if(btn) btn.disabled = false; });
+        async function getReport() {
+            if(isOfflineMode) return alert("離線模式無報表功能");
+            const start = document.getElementById('rptStart').value;
+            const end = document.getElementById('rptEnd').value;
+            if(!start || !end) return alert("請選擇日期");
+
+            const res = await fetch(`${API_URL}?action=get_report&auth=${sessionKey}&startDate=${start}&endDate=${end}`);
+            const data = await res.json();
+            if(data.status === "success") {
+                document.getElementById('rpt-revenue').innerText = "$" + data.report.revenue.toLocaleString();
+                document.getElementById('rpt-net').innerText = "$" + data.report.net_income.toLocaleString();
+            }
         }
+
+        function switchTab(id) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('nav-' + id).classList.add('active');
+        }
+        
+        // 初始化日期
+        document.getElementById('rptStart').valueAsDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        document.getElementById('rptEnd').valueAsDate = new Date();
     </script>
 </body>
 </html>
-
-
